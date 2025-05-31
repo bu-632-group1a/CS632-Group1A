@@ -1,4 +1,7 @@
-##Project Name
+# CS632-Group1A
+Group Project
+
+## Project Name
 EcoPulse
 
 ## Elevator Pitch
