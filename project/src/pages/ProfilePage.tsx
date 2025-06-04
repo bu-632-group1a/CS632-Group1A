@@ -1,232 +1,152 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useSustainability } from '../contexts/SustainabilityContext';
-import { User, Settings, Camera, Mail, Building, Award, AlertCircle } from 'lucide-react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { User, Mail, Award, Check, Calendar } from 'lucide-react';
+import Card, { CardContent } from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import { useAuth } from '../context/AuthContext';
 
 const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const { userScore, impactData } = useSustainability();
-  const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    organization: user?.organization || '',
-    title: user?.title || ''
-  });
-  const [error, setError] = useState<string | null>(null);
+  const { user, isAuthenticated } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      setError('Failed to log out');
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Please sign in</h2>
+        <p className="text-gray-600">You need to be signed in to view this page.</p>
+        <a href="/login" className="text-primary-600 hover:text-primary-800 font-medium mt-4 inline-block">
+          Go to login
+        </a>
+      </div>
+    );
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, this would update the user profile
-    setIsEditing(false);
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white shadow rounded-lg overflow-hidden"
-        >
-          {/* Profile Header */}
-          <div className="relative h-32 bg-gradient-to-r from-primary-600 to-primary-800">
-            <div className="absolute -bottom-12 left-8">
-              {user?.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.name}
-                  className="h-24 w-24 rounded-full border-4 border-white"
-                />
-              ) : (
-                <div className="h-24 w-24 rounded-full border-4 border-white bg-primary-100 flex items-center justify-center">
-                  <User className="h-12 w-12 text-primary-600" />
-                </div>
-              )}
+    <motion.div 
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={itemVariants}>
+        <h1 className="text-3xl font-bold text-gray-900 mb-1">My Profile</h1>
+        <p className="text-gray-600">Manage your account and review your sustainability progress</p>
+      </motion.div>
+      
+      <motion.div 
+        className="bg-white rounded-xl shadow-soft overflow-hidden"
+        variants={itemVariants}
+      >
+        <div className="h-32 bg-gradient-to-r from-primary-600 to-secondary-600"></div>
+        <div className="px-6 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-end -mt-16 mb-6">
+            <div className="relative">
+              <img 
+                src={user.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+                alt={user.name} 
+                className="w-32 h-32 rounded-xl border-4 border-white shadow-md object-cover"
+              />
+              <button className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md text-primary-600 hover:text-primary-800">
+                <User size={16} />
+              </button>
             </div>
-            <button
-              className="absolute bottom-2 right-4 text-white hover:text-primary-100"
-              onClick={handleLogout}
-            >
-              Sign out
-            </button>
-          </div>
-
-          {/* Profile Info */}
-          <div className="pt-16 px-8 pb-8">
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 rounded-md flex items-start">
-                <AlertCircle className="h-5 w-5 text-red-400 mt-0.5" />
-                <p className="ml-3 text-sm text-red-700">{error}</p>
+            <div className="mt-4 sm:mt-0 sm:ml-6">
+              <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
+              <div className="flex items-center text-gray-600">
+                <Mail size={16} className="mr-2" />
+                <span>{user.email}</span>
               </div>
-            )}
-
-            {isEditing ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="organization" className="block text-sm font-medium text-gray-700">
-                    Organization
-                  </label>
-                  <input
-                    type="text"
-                    id="organization"
-                    value={formData.organization}
-                    onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                  />
-                </div>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            ) : (
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Badge variant="primary" icon={<Award size={14} />} animated>
+              Level 3 Eco Warrior
+            </Badge>
+            <Badge variant="secondary" animated>
+              Joined 2023
+            </Badge>
+            <Badge variant="success" animated>
+              10+ Actions Completed
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-primary-50 rounded-lg p-4 flex items-center">
+              <div className="bg-primary-100 p-2 rounded-lg mr-3">
+                <Award size={20} className="text-primary-700" />
+              </div>
               <div>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
-                    <div className="mt-1 flex items-center text-sm text-gray-500">
-                      <Mail className="h-4 w-4 mr-1" />
-                      {user?.email}
-                    </div>
-                    {user?.organization && (
-                      <div className="mt-1 flex items-center text-sm text-gray-500">
-                        <Building className="h-4 w-4 mr-1" />
-                        {user.organization}
-                      </div>
-                    )}
-                    {user?.title && (
-                      <div className="mt-1 flex items-center text-sm text-gray-500">
-                        <Award className="h-4 w-4 mr-1" />
-                        {user.title}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center text-sm text-primary-600 hover:text-primary-700"
-                  >
-                    <Settings className="h-4 w-4 mr-1" />
-                    Edit Profile
-                  </button>
-                </div>
-
-                {/* Sustainability Stats */}
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium text-gray-900">Sustainability Impact</h3>
-                  <dl className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="bg-primary-50 overflow-hidden rounded-lg px-4 py-5 sm:p-6">
-                      <dt className="truncate text-sm font-medium text-primary-800">Total Score</dt>
-                      <dd className="mt-1 text-3xl font-semibold text-primary-900">{userScore}</dd>
-                    </div>
-                    <div className="bg-green-50 overflow-hidden rounded-lg px-4 py-5 sm:p-6">
-                      <dt className="truncate text-sm font-medium text-green-800">Paper Saved</dt>
-                      <dd className="mt-1 text-3xl font-semibold text-green-900">
-                        {impactData.paperSaved}
-                        <span className="text-sm font-normal"> sheets</span>
-                      </dd>
-                    </div>
-                    <div className="bg-blue-50 overflow-hidden rounded-lg px-4 py-5 sm:p-6">
-                      <dt className="truncate text-sm font-medium text-blue-800">CO₂ Reduced</dt>
-                      <dd className="mt-1 text-3xl font-semibold text-blue-900">
-                        {impactData.co2Reduced.toFixed(1)}
-                        <span className="text-sm font-normal"> kg</span>
-                      </dd>
-                    </div>
-                    <div className="bg-purple-50 overflow-hidden rounded-lg px-4 py-5 sm:p-6">
-                      <dt className="truncate text-sm font-medium text-purple-800">Plastic Avoided</dt>
-                      <dd className="mt-1 text-3xl font-semibold text-purple-900">
-                        {impactData.plasticAvoided}
-                        <span className="text-sm font-normal"> items</span>
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-
-                {/* Badges and Achievements */}
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium text-gray-900">Badges & Achievements</h3>
-                  <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                    {user?.completedBingoSquares && user.completedBingoSquares.length >= 5 && (
-                      <div className="flex flex-col items-center p-4 bg-accent-50 rounded-lg">
-                        <Award className="h-8 w-8 text-accent-600" />
-                        <p className="mt-2 text-sm font-medium text-accent-900">Bingo Master</p>
-                      </div>
-                    )}
-                    {userScore >= 100 && (
-                      <div className="flex flex-col items-center p-4 bg-green-50 rounded-lg">
-                        <Leaf className="h-8 w-8 text-green-600" />
-                        <p className="mt-2 text-sm font-medium text-green-900">Eco Warrior</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <p className="text-sm text-gray-600">Sustainability Score</p>
+                <p className="text-lg font-bold text-primary-700">{user.sustainabilityScore} pts</p>
               </div>
-            )}
+            </div>
+            
+            <div className="bg-secondary-50 rounded-lg p-4 flex items-center">
+              <div className="bg-secondary-100 p-2 rounded-lg mr-3">
+                <Check size={20} className="text-secondary-700" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Badges Earned</p>
+                <p className="text-lg font-bold text-secondary-700">{user.badges.length}</p>
+              </div>
+            </div>
+            
+            <div className="bg-accent-50 rounded-lg p-4 flex items-center">
+              <div className="bg-accent-100 p-2 rounded-lg mr-3">
+                <Calendar size={20} className="text-accent-700" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Sessions Attended</p>
+                <p className="text-lg font-bold text-accent-700">{user.checkedInEvents.length}</p>
+              </div>
+            </div>
           </div>
-        </motion.div>
-      </div>
-    </div>
+        </div>
+      </motion.div>
+      
+      <motion.div variants={itemVariants}>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Earned Badges</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {user.badges.map((badge) => (
+            <Card key={badge.id}>
+              <CardContent className="p-4 text-center">
+                <div className="bg-primary-100 mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-3">
+                  <Award size={32} className="text-primary-600" />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-1">{badge.name}</h3>
+                <p className="text-sm text-gray-600 mb-2">{badge.description}</p>
+                <p className="text-xs text-gray-500">Earned on {badge.dateEarned}</p>
+              </CardContent>
+            </Card>
+          ))}
+          
+          <Card>
+            <CardContent className="p-4 text-center bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center h-full">
+              <div className="text-gray-400 mb-2">
+                <Award size={32} />
+              </div>
+              <p className="text-gray-600 font-medium">More badges to earn!</p>
+              <p className="text-sm text-gray-500">Complete sustainability actions</p>
+            </CardContent>
+          </Card>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

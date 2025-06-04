@@ -1,0 +1,122 @@
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Home, Calendar, Bookmark, User, LogIn, LogOut, Leaf, Award, CheckSquare, BarChart3, Sprout } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+const Sidebar: React.FC = () => {
+  const { isAuthenticated, user, logout } = useAuth();
+
+  const navItems = [
+    { label: 'Home', icon: <Home size={20} />, path: '/' },
+    { label: 'Sessions', icon: <Calendar size={20} />, path: '/sessions' },
+    ...(isAuthenticated
+      ? [
+          { label: 'Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
+          { label: 'Profile', icon: <User size={20} />, path: '/profile' },
+          { label: 'Check-In', icon: <CheckSquare size={20} />, path: '/check-in' },
+          { label: 'Bingo', icon: <Award size={20} />, path: '/bingo' },
+          { label: 'Sustainability', icon: <Leaf size={20} />, path: '/sustainability' },
+          { label: 'Leaderboard', icon: <BarChart3 size={20} />, path: '/leaderboard' },
+          { 
+            label: 'Logout', 
+            icon: <LogOut size={20} />, 
+            path: '/logout',
+            onClick: (e: React.MouseEvent) => {
+              e.preventDefault();
+              logout();
+            }
+          }
+        ]
+      : [{ label: 'Login', icon: <LogIn size={20} />, path: '/login' }]
+    ),
+  ];
+
+  const sidebarVariants = {
+    hidden: { x: -300 },
+    visible: { 
+      x: 0,
+      transition: { 
+        type: 'spring', 
+        stiffness: 300, 
+        damping: 30,
+        staggerChildren: 0.1,
+        delayChildren: 0.2 
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 }
+  };
+
+  return (
+    <motion.aside 
+      className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto"
+      initial="hidden"
+      animate="visible"
+      variants={sidebarVariants}
+    >
+      <div className="p-6 border-b border-gray-200">
+        <motion.div 
+          className="flex items-center space-x-3" 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Sprout size={28} className="text-primary-600" />
+          <h1 className="font-bold text-xl text-gray-900">EcoConnect</h1>
+        </motion.div>
+      </div>
+      
+      <nav className="p-4 flex-1">
+        <ul className="space-y-2">
+          {navItems.map((item) => (
+            <motion.li key={item.path} variants={itemVariants}>
+              <NavLink
+                to={item.path}
+                onClick={item.onClick}
+                className={({ isActive }) =>
+                  `flex items-center p-3 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'hover:bg-gray-100'
+                  }`
+                }
+              >
+                <span className="mr-3 text-primary-600">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+              </NavLink>
+            </motion.li>
+          ))}
+        </ul>
+      </nav>
+      
+      {isAuthenticated && user && (
+        <motion.div 
+          className="p-4 border-t border-gray-200 flex items-center"
+          variants={itemVariants}
+        >
+          <div className="flex-shrink-0 mr-3">
+            <img 
+              src={user.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+              alt="Profile" 
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {user.name}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {user.email}
+            </p>
+          </div>
+        </motion.div>
+      )}
+    </motion.aside>
+  );
+};
+
+export default Sidebar;
