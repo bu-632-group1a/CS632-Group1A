@@ -22,6 +22,10 @@ const resolvers = {
           query.actionType = filter.actionType;
         }
         
+        if (filter.userId) {
+          query.userId = filter.userId;
+        }
+        
         // Apply date range filter if provided
         if (filter.fromDate || filter.toDate) {
           query.performedAt = {};
@@ -67,13 +71,15 @@ const resolvers = {
     },
     
     // Get aggregated metrics about sustainability actions
-    sustainabilityMetrics: async () => {
+    sustainabilityMetrics: async (_, { userId }) => {
       try {
         // Get total actions and impact
-        const { totalImpact, count } = await SustainabilityAction.calculateTotalImpact();
+        const { totalImpact, count } = await SustainabilityAction.calculateTotalImpact(userId);
         
         // Get action counts by type
+        const match = userId ? { userId } : {};
         const actionsByTypeResult = await SustainabilityAction.aggregate([
+          { $match: match },
           {
             $group: {
               _id: '$actionType',

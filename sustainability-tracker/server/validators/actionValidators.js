@@ -46,6 +46,13 @@ const createActionSchema = Joi.object({
     .messages({
       'string.isoDate': 'Performed date must be a valid ISO date string',
     }),
+    
+  userId: Joi.string()
+    .required()
+    .messages({
+      'any.required': 'User ID is required',
+      'string.empty': 'User ID cannot be empty',
+    }),
 });
 
 // Schema for updating an existing sustainability action

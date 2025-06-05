@@ -10,6 +10,8 @@ const typeDefs = gql`
     description: String
     "Impact score calculated for this action"
     impactScore: Float!
+    "User ID who performed this action"
+    userId: String!
     "Date when the action was performed"
     performedAt: String!
     "Date when the record was created"
@@ -38,6 +40,7 @@ const typeDefs = gql`
     description: String
     impactScore: Float
     performedAt: String
+    userId: String!
   }
 
   "Input for updating an existing sustainability action"
@@ -53,6 +56,7 @@ const typeDefs = gql`
     actionType: ActionType
     fromDate: String
     toDate: String
+    userId: String
   }
 
   "Aggregated metrics about sustainability actions"
@@ -82,7 +86,7 @@ const typeDefs = gql`
     "Get a specific sustainability action by ID"
     sustainabilityAction(id: ID!): SustainabilityAction
     "Get aggregated metrics about sustainability actions"
-    sustainabilityMetrics: SustainabilityMetrics!
+    sustainabilityMetrics(userId: String): SustainabilityMetrics!
   }
 
   "Root Mutation type"

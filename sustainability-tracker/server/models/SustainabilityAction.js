@@ -47,6 +47,11 @@ const sustainabilityActionSchema = new mongoose.Schema(
       min: [0, 'Impact score must be at least 0'],
       index: true, // Index for aggregation operations
     },
+    userId: {
+      type: String,
+      required: [true, 'User ID is required'],
+      index: true, // Index for faster user-based queries
+    },
     performedAt: {
       type: Date,
       required: [true, 'Date of action is required'],
@@ -62,6 +67,9 @@ const sustainabilityActionSchema = new mongoose.Schema(
 
 // Create compound index for date range queries
 sustainabilityActionSchema.index({ performedAt: 1, actionType: 1 });
+
+// Create compound index for user-specific queries
+sustainabilityActionSchema.index({ userId: 1, performedAt: -1 });
 
 // Create index for aggregation operations
 sustainabilityActionSchema.index({ actionType: 1, impactScore: 1 });
@@ -90,8 +98,11 @@ sustainabilityActionSchema.methods.calculateCarbonReduction = function() {
 };
 
 // Static method to calculate total impact
-sustainabilityActionSchema.statics.calculateTotalImpact = async function() {
+sustainabilityActionSchema.statics.calculateTotalImpact = async function(userId = null) {
+  const match = userId ? { userId } : {};
+  
   const result = await this.aggregate([
+    { $match: match },
     {
       $group: {
         _id: null,
