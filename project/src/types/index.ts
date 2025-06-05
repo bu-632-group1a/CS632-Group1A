@@ -18,7 +18,7 @@ export interface Session {
   category: string;
   imageUrl?: string;
   date: string;
-  type: 'keynote' | 'panel' | 'break' | 'presentation' | 'workshop' | 'other';
+  type: 'keynote' | 'panel' | 'break' | 'presentation' | 'workshop' | 'reception' | 'other';
   speakers?: string[];
   moderator?: string;
 }

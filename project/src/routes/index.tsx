@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
+import RegistrationPage from '../pages/RegistrationPage';
 import SessionsPage from '../pages/SessionsPage';
 import BookmarksPage from '../pages/BookmarksPage';
 import ProfilePage from '../pages/ProfilePage';
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
       {
         path: 'login',
         element: <LoginPage />,
+      },
+      {
+        path: 'signup',
+        element: <RegistrationPage />,
       },
       {
         path: 'logout',

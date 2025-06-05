@@ -1,6 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Users, Badge, Award, ArrowRight } from 'lucide-react';
+import { 
+  Calendar, Users, Badge, Award, ArrowRight, LogIn, BarChart2,
+  BookOpen, Leaf, UserPlus, User, Bookmark, CheckSquare, Layout
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -29,6 +32,63 @@ const HomePage: React.FC = () => {
     visible: { opacity: 1, y: 0 }
   };
 
+  const features = [
+    {
+      icon: <Calendar className="w-8 h-8 text-primary-600" />,
+      title: "View Scheduled Sessions",
+      description: "Browse and filter conference sessions",
+      link: "/sessions"
+    },
+    {
+      icon: <BarChart2 className="w-8 h-8 text-primary-600" />,
+      title: "View Sustainability Leaderboard",
+      description: "See who's making the biggest impact",
+      link: "/leaderboard"
+    },
+    {
+      icon: <UserPlus className="w-8 h-8 text-primary-600" />,
+      title: "Attendee Portal Sign Up",
+      description: "Create your conference account",
+      link: "/signup"
+    },
+    {
+      icon: <User className="w-8 h-8 text-primary-600" />,
+      title: "Attendee Portal Sign In",
+      description: "Access your conference profile",
+      link: "/login"
+    },
+    {
+      icon: <Bookmark className="w-8 h-8 text-primary-600" />,
+      title: "Add Session Bookmarks",
+      description: "Save sessions for later",
+      link: "/bookmarks"
+    },
+    {
+      icon: <Leaf className="w-8 h-8 text-primary-600" />,
+      title: "Track Sustainability Actions",
+      description: "Log your eco-friendly activities",
+      link: "/sustainability"
+    },
+    {
+      icon: <Layout className="w-8 h-8 text-primary-600" />,
+      title: "Manage User Profile",
+      description: "Update your preferences",
+      link: "/profile"
+    },
+    {
+      icon: <CheckSquare className="w-8 h-8 text-primary-600" />,
+      title: "Session Check-In",
+      description: "Mark your attendance",
+      link: "/check-in"
+    },
+    {
+      icon: <BookOpen className="w-8 h-8 text-primary-600" />,
+      title: "Event Bingo Card",
+      description: "Complete activities for points",
+      link: "/bingo"
+    }
+  ];
+
   return (
     <div className="space-y-8">
       {/* Hero Section */}
@@ -48,6 +108,7 @@ const HomePage: React.FC = () => {
           >
             Project Management in Practice 2025
           </motion.h1>
+          
           <motion.p 
             className="text-lg lg:text-xl max-w-2xl mb-6 text-white/90"
             initial={{ opacity: 0 }}
@@ -56,31 +117,61 @@ const HomePage: React.FC = () => {
           >
             Join us for a transformative experience dedicated to exploring the intersection of AI and project management.
           </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="space-x-4"
-          >
-            <Link to="/sessions">
-              <Button 
-                size="lg" 
-                variant="outline"
-                icon={<Calendar size={20} />}
-                className="border-white text-white hover:bg-white/20"
-              >
-                View Schedule
-              </Button>
-            </Link>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="border-white text-white hover:bg-white/20"
+          
+          {!isAuthenticated && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
             >
-              Learn More
-            </Button>
-          </motion.div>
+              <Link to="/login">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  icon={<LogIn size={20} />}
+                  className="border-white text-white hover:bg-white/20"
+                >
+                  Sign In
+                </Button>
+              </Link>
+            </motion.div>
+          )}
         </div>
+      </motion.section>
+
+      {/* Key Features Section */}
+      <motion.section
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="bg-white rounded-xl shadow-soft p-8"
+      >
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Conference Features</h2>
+          <p className="text-gray-600">Everything you need to make the most of your conference experience</p>
+        </motion.div>
+
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          variants={containerVariants}
+        >
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              variants={itemVariants}
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Link to={feature.link}>
+                <div className="bg-gray-50 rounded-xl p-6 h-full hover:bg-gray-100 transition-colors">
+                  <div className="mb-4">{feature.icon}</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                  <p className="text-gray-600 text-sm">{feature.description}</p>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
       </motion.section>
       
       {/* Welcome Back Section (for authenticated users) */}

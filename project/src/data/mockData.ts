@@ -216,6 +216,18 @@ export const mockSessions: Session[] = [
   },
   {
     id: '17',
+    title: 'Post-Event Reception at BU Pub',
+    description: 'Join us for a casual networking reception at the historic Fuller\'s BU Pub. Connect with fellow attendees, speakers, and industry professionals while enjoying refreshments.',
+    speaker: 'Various',
+    time: '6:15 PM - 8:00 PM',
+    location: 'Fuller\'s BU Pub',
+    category: 'Networking',
+    date: '2025-06-13',
+    type: 'reception',
+    imageUrl: 'https://images.pexels.com/photos/696218/pexels-photo-696218.jpeg',
+  },
+  {
+    id: '18',
     title: 'PMI Certification Workshop',
     description: 'Comprehensive preparation session covering both PMI exam preparation and PMI-CP certification requirements. This full-day workshop combines theoretical knowledge with practical exercises to help participants prepare for their certification journey.',
     speaker: 'PMI Certified Instructor',

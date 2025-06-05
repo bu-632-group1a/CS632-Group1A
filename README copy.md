@@ -97,78 +97,74 @@ Organizers will get access to exportable sustainability and engagement analytics
 
 Ultimately, EcoPulse aims to redefine what it means to participate in an event—where being informed, engaged, and eco-conscious are all part of one smart, connected experience.
 
-## PROMPTS
-
-User Story and Prompts
+## User Stories
 
 1. Cross-Device Access
+ As an attendee, I want to access the app on both my phone and laptop so that I can stay informed regardless of the device I’m using.
+ Context: The app must be fully functional on both mobile and desktop browsers.
+ Prompt: Create a responsive layout using React Web that supports mobile and desktop views for attendee dashboards.
 
-Prompt: Build a responsive React SPA (TypeScript) for a sustainability-themed event app with Tailwind CSS, Framer Motion, and React Router. Use a mobile-first layout with FAB navigation on mobile and sidebar on desktop. Include placeholder routes for Home, Login, Logout, Sessions, Session Bookmarks, User Profile, Check-In, Bingo Card, Sustainability Tracking, and Leaderboard. Style using nature colors (e.g., green-600, emerald-500), rounded corners, soft shadows, nature icons, ARIA accessibility, and loading skeletons. Add Jest + React Testing Library coverage. No backend yet.
+2. Custom Agenda Builder
+ As an attendee, I want to build a custom agenda from the session list so I can focus on sessions that matter most to me.
+ Context: Users can browse sessions and build a schedule that syncs across devices.
+ Prompt: Build an authenticated agenda builder where attendees can select sessions, save them to their profile, and view a personalized agenda list.
 
-Prompt Followup 1:
+3. QR Code Check-In
+ As an attendee, I want to scan a QR code at the session entrance so that my attendance is logged easily.
+ Context: Attendees check in by scanning QR codes at session doors.
+ Prompt: Develop a QR scanner component that logs session ID, user ID, and timestamp upon scan, and displays a green checkmark for confirmation.
 
-Update sessions with this content.
+4. Sustainability Action Tracker
+ As a sustainability-conscious attendee, I want to log eco-friendly actions during the event so I can track my contributions to sustainability.
+ Context: Track actions like selecting vegetarian meals or using reusable bottles.
+ Prompt: Create a form for logging eco-friendly actions. Save each entry with a timestamp and action type, and update the user's sustainability score accordingly.
 
-June 13th, 2025
-665 Commonwealth Ave. Boston, MA 02215
-Room 1750 (17th Floor) Click to see image of entrance to the building.
+5. Session Discussion Board
+ As an attendee, I want to join discussions related to sessions I attend so I can share insights and ask questions.
+ Context: Each session has a dedicated discussion board.
+ Prompt: Build a threaded discussion board linked to each session ID. Allow users to post, reply, and upvote comments.
 
-Time	Content	Comments (Speaker in Room unless Noted)
-9:00 – 9:15	Welcome Comments	Conference Chairs and
-Megan Funaro, Assistant Provost for Operations, Boston University
-9:15 – 10:00 am	Reframing project success	Keynote Speaker: Ben Breen, PMI
-10:00 – 11:00 am	To AI or not AI: That’s The Question for Project Professionals	Ike Nwankwo, PMI, Kushagra Varma, Wentworth Institute of Technology, Kathleen Walch, PMI and Anil Sawhney, Boston University (Moderator)
-11:00 – 11:15	Networking Break and Vendor Demos
-11:15 – 11:40	Building a Culture of Ownership in the Customer	Tim Wharton, US Navy
-11:40 – 12:00	PM Voices from the Field	BU MET Alums in industry
-Luis Arguelles and Fabio Mazzocco
-Rich Maltzman, Boston University (Moderator)
-12:00 – 1:15 Lunch, Vendor Demos, and Tour of the heat exchange area (top floors) of the CDS building, hosted by BU Sustainability
-Time	Content	Comments (Speaker in Room unless Noted)
-1:15 – 1:35	The PMI Viewpoint: AI x PM
-Kathleen Walch, PMI
-1:35 – 1:55	The Art of Stakeholder Engagement: Innovative Approaches for Project Success	Professor Denise Arruda, PMI Mass Bay
-1:55 – 3:00	AI Meets Construction: AI’s Role in Shaping the Built Environment	Ben Breen, PMI, David Morczinek, AirWorks, Dheekshita Kumar, Civcheck.ai, Aleksey Chuprov, Suffolk Construction, and Anil Sawhney, Boston University (Moderator)
-3:00 – 3:15	Networking Break and Vendor Demos
-3:15 – 3:55	PM Voices from the Classroom	Student project presentations
-3:55 – 4:15	PM Voices from the Field	BU MET Alums in industry
-Ben Awuah and Inthumathi Chandrasekaran
-Vijay Kanabar, Boston University (Moderator)
-4:15 – 4:35	The Broken Loop: Re-imagining Human Insight in AI Systems	Professor Dave Silberman
-4:35 – 4:50	Closing Keynote: Embracing Transformation Amid Evolving Project and Business Challenges	Karim Teli, CEO and Entrepreneur
-4:50 – 5:00	Thanks, next year, and closing	Vijay Kanabar, Boston University
-June 14th 2025
-June 14, 2025Tutorials and Certifications	PMI Exam Preparation and PMI-CP (TBC)	Virtual
+6. Sustainability Leaderboard
+ As an attendee, I want to compare my sustainability score to others so I stay motivated to engage more.
+ Context: Users want to see how they rank in eco-friendly engagement.
+ Prompt: Create a leaderboard that ranks users by sustainability score. Ensure real-time updates of rankings.
 
-Prompt Followup 2:
+7. Beginner-Friendly UI
+ As a first-time attendee, I want the app to be intuitive so I can quickly learn how to use it without help.
+ Context: The app must be easy for non-technical users.
+ Prompt: Design a simplified dashboard with tooltips and clearly labeled actions (e.g., bookmark, check-in) to guide new users.
 
-can you update with this content.
+8. Session Bookmark Insights
+ As an organizer, I want to know which sessions are being bookmarked most often so I can plan room assignments accordingly.
+ Context: Helps predict attendance and avoid overbooking.
+ Prompt: Create an admin dashboard widget that displays the top 10 most-bookmarked sessions with titles and counts.
 
-https://www.projectmanagementinpractice.com/session-details-june-14/
+9. Real-Time Attendance
+ As an organizer, I want to access real-time session attendance data so I can track engagement.
+ Context: Requires instant feedback from check-in scans.
+ Prompt: Display real-time check-in counts per session in the admin panel using live API polling or WebSockets.
 
-Prompt Followup 3:
+10. Real-Time Content Management
+ As an organizer, I want to upload and update session content, speaker bios, and logistics at any time.
+ Context: Enables dynamic content management.
+ Prompt: Build a content management interface for admins to create, edit, and delete sessions, speaker info, and venue logistics.
 
-The View schedule button should look like the learn more button, but instead the view schedule button is white unless you hover it.
+11. Speaker Content Control
+ As a speaker, I want to edit my session details and upload files before the event.
+ Context: Empower speakers to manage their own content.
+ Prompt: Create a session editor for speakers to update titles, descriptions, and upload presentation files.
 
-Prompt Followup 4:
+12. Gamified Bingo Board
+ As an attendee, I want to complete a conference-themed Bingo board so I can connect with others and earn rewards.
+ Context: A Bingo board will gamify sustainability and social engagement.
+ Prompt: Design an interactive Bingo board with tappable squares. Track user progress, award bonus points for completed rows, and link with the sustainability badge system.
 
-The View Schedule should go to View All link, but right now its a broken link
+13. Secure Sign-In
+As a user, I want to sign in securely using my email and password so that I can access my personalized content.
+Context: The app needs secure, user-authenticated sessions.
+Prompt: Implement a secure login system with JWT-based authentication and hashed passwords. Include error handling and session timeouts.
 
-Prompt Followup 5:
-
-On the View All page, add a home page button.
-
-Prompt Followup 6:
-
-Add a filter int he sessions feature by Day 1 or Day 2 of the conference
-
-Prompt Followup 7:
-
-Change the time for PMI Exam Preparation Workshop
-and PMI-CP Certification Tutorial to 9AM - 5PM and combine them into one workshop
-
-Prompt Follwup 8:
-
-Update Register now link to https://www.eventbrite.com/e/19th-annual-project-management-in-practice-conference-boston-usa-2025-tickets-1001420223847?aff=oddtdtcreator
-
-STATUS: Git commit to repository
+14. RSVP to BU Pub Event
+As an attendee, I want to RSVP to the BU Pub event after the conference so that I can confirm my attendance and receive details.
+Context: Attendees should be able to register interest in the optional social gathering.
+Prompt: Create an RSVP form for the BU Pub event. Collect user ID, contact info, and any dietary preferences. Send confirmation upon submission.

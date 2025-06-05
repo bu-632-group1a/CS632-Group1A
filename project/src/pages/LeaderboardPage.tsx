@@ -1,7 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Users, Medal } from 'lucide-react';
+import { Trophy, Users, Medal, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import LeaderboardItem from '../components/leaderboard/LeaderboardItem';
+import Button from '../components/ui/Button';
 import { mockLeaderboard } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 
@@ -33,9 +35,20 @@ const LeaderboardPage: React.FC = () => {
       initial="hidden"
       animate="visible"
     >
-      <motion.div variants={itemVariants}>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">Sustainability Leaderboard</h1>
-        <p className="text-gray-600">See who's making the biggest impact at the event</p>
+      <motion.div variants={itemVariants} className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Sustainability Leaderboard</h1>
+          <p className="text-gray-600">See who's making the biggest impact at the event</p>
+        </div>
+        <Link to="/">
+          <Button
+            variant="ghost"
+            icon={<Home size={20} />}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            Home
+          </Button>
+        </Link>
       </motion.div>
       
       <motion.div variants={itemVariants}>

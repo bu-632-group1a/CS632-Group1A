@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Mail, Lock, LogIn, Home } from 'lucide-react';
 import Card, { CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -34,9 +34,20 @@ const LoginPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
-          <p className="text-gray-600">Sign in to continue your sustainability journey</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
+            <p className="text-gray-600">Sign in to continue your conference journey</p>
+          </div>
+          <Link to="/">
+            <Button
+              variant="ghost"
+              icon={<Home size={20} />}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Home
+            </Button>
+          </Link>
         </div>
         
         <Card>

@@ -1,35 +1,27 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Calendar, Bookmark, User, LogIn, LogOut, Leaf, Award, CheckSquare, BarChart3, Sprout } from 'lucide-react';
+import { 
+  Menu, LogIn, Calendar, BarChart2, UserPlus, User, 
+  Bookmark, Leaf, Layout, CheckSquare, BookOpen, Home, Sprout
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar: React.FC = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const navItems = [
     { label: 'Home', icon: <Home size={20} />, path: '/' },
-    { label: 'Sessions', icon: <Calendar size={20} />, path: '/sessions' },
-    ...(isAuthenticated
-      ? [
-          { label: 'Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
-          { label: 'Profile', icon: <User size={20} />, path: '/profile' },
-          { label: 'Check-In', icon: <CheckSquare size={20} />, path: '/check-in' },
-          { label: 'Bingo', icon: <Award size={20} />, path: '/bingo' },
-          { label: 'Sustainability', icon: <Leaf size={20} />, path: '/sustainability' },
-          { label: 'Leaderboard', icon: <BarChart3 size={20} />, path: '/leaderboard' },
-          { 
-            label: 'Logout', 
-            icon: <LogOut size={20} />, 
-            path: '/logout',
-            onClick: (e: React.MouseEvent) => {
-              e.preventDefault();
-              logout();
-            }
-          }
-        ]
-      : [{ label: 'Login', icon: <LogIn size={20} />, path: '/login' }]
-    ),
+    { label: 'Sign In', icon: <LogIn size={20} />, path: '/login' },
+    { label: 'View Scheduled Sessions', icon: <Calendar size={20} />, path: '/sessions' },
+    { label: 'View Sustainability Leaderboard', icon: <BarChart2 size={20} />, path: '/leaderboard' },
+    { label: 'Attendee Portal Sign Up', icon: <UserPlus size={20} />, path: '/signup' },
+    { label: 'Attendee Portal Sign In', icon: <User size={20} />, path: '/login' },
+    { label: 'Add Session Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
+    { label: 'Track Sustainability Actions', icon: <Leaf size={20} />, path: '/sustainability' },
+    { label: 'Manage User Profile', icon: <Layout size={20} />, path: '/profile' },
+    { label: 'Session Check-In', icon: <CheckSquare size={20} />, path: '/check-in' },
+    { label: 'Event Bingo Card', icon: <BookOpen size={20} />, path: '/bingo' },
   ];
 
   const sidebarVariants = {
@@ -66,7 +58,7 @@ const Sidebar: React.FC = () => {
           transition={{ delay: 0.3 }}
         >
           <Sprout size={28} className="text-primary-600" />
-          <h1 className="font-bold text-xl text-gray-900">EcoConnect</h1>
+          <h1 className="font-bold text-xl text-gray-900">PM in Practice</h1>
         </motion.div>
       </div>
       
@@ -76,7 +68,6 @@ const Sidebar: React.FC = () => {
             <motion.li key={item.path} variants={itemVariants}>
               <NavLink
                 to={item.path}
-                onClick={item.onClick}
                 className={({ isActive }) =>
                   `flex items-center p-3 rounded-lg transition-colors ${
                     isActive
