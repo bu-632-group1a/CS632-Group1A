@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config(); // This loads the variables from .env into process.env
 import mongoose from 'mongoose';
 
 // MongoDB connection URI (use environment variable in production)
