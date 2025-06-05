@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Menu, LogIn, Calendar, BarChart2, UserPlus, User, 
+  Menu, LogIn, Calendar, BarChart2, UserPlus,
   Bookmark, Leaf, Layout, CheckSquare, BookOpen, Home, Sprout
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -13,10 +13,9 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { label: 'Home', icon: <Home size={20} />, path: '/' },
     { label: 'Sign In', icon: <LogIn size={20} />, path: '/login' },
+    { label: 'Sign Up', icon: <UserPlus size={20} />, path: '/signup' },
     { label: 'View Scheduled Sessions', icon: <Calendar size={20} />, path: '/sessions' },
     { label: 'View Sustainability Leaderboard', icon: <BarChart2 size={20} />, path: '/leaderboard' },
-    { label: 'Attendee Portal Sign Up', icon: <UserPlus size={20} />, path: '/signup' },
-    { label: 'Attendee Portal Sign In', icon: <User size={20} />, path: '/login' },
     { label: 'Add Session Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
     { label: 'Track Sustainability Actions', icon: <Leaf size={20} />, path: '/sustainability' },
     { label: 'Manage User Profile', icon: <Layout size={20} />, path: '/profile' },

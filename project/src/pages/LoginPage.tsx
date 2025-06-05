@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, LogIn, Home } from 'lucide-react';
+import { Mail, Lock, LogIn, Home, UserPlus } from 'lucide-react';
 import Card, { CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
       >
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Project Management in Practice 2025</h1>
             <p className="text-gray-600">Sign in to continue your conference journey</p>
           </div>
           <Link to="/">
@@ -63,7 +63,7 @@ const LoginPage: React.FC = () => {
               </motion.div>
             )}
             
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <Input
                 label="Email"
                 type="email"
@@ -74,7 +74,6 @@ const LoginPage: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 icon={<Mail size={18} />}
-                className="mb-4"
               />
               
               <Input
@@ -87,28 +86,35 @@ const LoginPage: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 icon={<Lock size={18} />}
-                className="mb-6"
               />
               
-              <Button
-                type="submit"
-                fullWidth
-                size="lg"
-                isLoading={loading}
-                icon={<LogIn size={20} />}
-              >
-                Sign In
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  fullWidth
+                  size="lg"
+                  isLoading={loading}
+                  icon={<LogIn size={20} />}
+                >
+                  Sign In
+                </Button>
+
+                <Link to="/signup" className="block">
+                  <Button
+                    type="button"
+                    fullWidth
+                    size="lg"
+                    variant="outline"
+                    icon={<UserPlus size={20} />}
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
             </form>
             
             <div className="mt-6 text-center text-sm text-gray-600">
               <p>
-                Don't have an account?{' '}
-                <a href="#" className="text-primary-600 hover:text-primary-800 font-medium">
-                  Sign up
-                </a>
-              </p>
-              <p className="mt-2">
                 <a href="#" className="text-primary-600 hover:text-primary-800">
                   Forgot your password?
                 </a>
