@@ -84,8 +84,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sustainability',
-        // Temporarily removed ProtectedRoute wrapper for testing
-        element: <SustainabilityPage />,
+        element: (
+          <ProtectedRoute>
+            <SustainabilityPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'leaderboard',
