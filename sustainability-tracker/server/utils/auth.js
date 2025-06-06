@@ -11,7 +11,8 @@ export const generateTokens = (user) => {
       role: user.role,
       firstName: user.firstName,
       lastName: user.lastName,
-      fullName: `${user.firstName} ${user.lastName}`
+      fullName: `${user.firstName} ${user.lastName}`,
+      createdAt: user.createdAt,
     },
     JWT_SECRET,
     { expiresIn: '15m' }

@@ -8,6 +8,7 @@ export const typeDefs = gql`
     fullName: String!
     username: String!
     email: String!
+    profilePicture: String
     role: UserRole!
     createdAt: String!
     updatedAt: String!
@@ -29,6 +30,10 @@ export const typeDefs = gql`
   input LoginInput {
     email: String!
     password: String!
+  }
+
+  input UpdateProfileInput {
+    profilePicture: String!
   }
 
   type AuthPayload {
@@ -133,6 +138,7 @@ export const typeDefs = gql`
     login(input: LoginInput!): AuthPayload!
     refreshToken(refreshToken: String!): TokenPayload!
     logout(refreshToken: String!): Boolean!
+    updateProfilePicture(input: UpdateProfileInput!): User!
     createSustainabilityAction(input: CreateSustainabilityActionInput!): SustainabilityAction!
     updateSustainabilityAction(id: ID!, input: UpdateSustainabilityActionInput!): SustainabilityAction!
     deleteSustainabilityAction(id: ID!): Boolean!

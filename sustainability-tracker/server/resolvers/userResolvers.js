@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
-import { validateRegister, validateLogin } from '../validators/userValidators.js';
+import { validateRegister, validateLogin, validateProfilePicture } from '../validators/userValidators.js';
 import { generateTokens, verifyRefreshToken, getAuthUser } from '../utils/auth.js';
 
 const userResolvers = {
@@ -115,6 +115,29 @@ const userResolvers = {
         accessToken,
         refreshToken,
       };
+    },
+
+    updateProfilePicture: async (_, { input }, context) => {
+      const authUser = getAuthUser(context);
+      
+      const { error } = validateProfilePicture(input);
+      if (error) {
+        throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const user = await User.findById(authUser.userId);
+      if (!user) {
+        throw new GraphQLError('User not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      user.profilePicture = input.profilePicture;
+      await user.save();
+
+      return user;
     },
 
     refreshToken: async (_, { refreshToken }) => {

@@ -37,6 +37,15 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Password is required'],
     minlength: [8, 'Password must be at least 8 characters long'],
   },
+  profilePicture: {
+    type: String,
+    validate: {
+      validator: function(v) {
+        return !v || /^https?:\/\/.+/.test(v);
+      },
+      message: 'Profile picture must be a valid URL'
+    }
+  },
   role: {
     type: String,
     enum: ['USER', 'ADMIN'],

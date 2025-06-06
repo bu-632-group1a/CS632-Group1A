@@ -66,10 +66,24 @@ const loginSchema = Joi.object({
     }),
 });
 
+const profilePictureSchema = Joi.object({
+  profilePicture: Joi.string()
+    .uri()
+    .required()
+    .messages({
+      'string.uri': 'Profile picture must be a valid URL',
+      'any.required': 'Profile picture URL is required',
+    }),
+});
+
 export const validateRegister = (input) => {
   return registerSchema.validate(input, { abortEarly: false });
 };
 
 export const validateLogin = (input) => {
   return loginSchema.validate(input, { abortEarly: false });
+};
+
+export const validateProfilePicture = (input) => {
+  return profilePictureSchema.validate(input, { abortEarly: false });
 };
