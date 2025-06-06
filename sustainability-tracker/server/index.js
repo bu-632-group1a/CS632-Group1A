@@ -43,15 +43,10 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  const allowedOrigins = [
-    'https://cs-632-group1-a.vercel.app', // Replace with your actual Vercel frontend URL
-    'http://localhost:5173', // Replace with your actual Vercel frontend URL
-  ];
-
-  app.use(cors({
-    origin: allowedOrigins,
-    credentials: true,
-  }));
+app.use(cors({
+  origin: 'https://cs-632-group1-a.vercel.app', // your Vercel frontend URL
+  credentials: true,
+}));
 
   // Create GraphQL schema
   const schema = makeExecutableSchema({ 
