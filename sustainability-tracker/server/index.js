@@ -1,6 +1,5 @@
 import express from 'express';
 import http from 'http';
-import cors from 'cors';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
@@ -43,19 +42,6 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  // CORS configuration using environment variables
-  const corsOptions = {
-    origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:5173'],
-    credentials: process.env.CORS_CREDENTIALS === 'true' || true,
-    methods: process.env.CORS_METHODS || 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: process.env.CORS_ALLOWED_HEADERS || 'Content-Type,Authorization,X-Requested-With',
-    exposedHeaders: process.env.CORS_EXPOSED_HEADERS || 'Authorization',
-    maxAge: parseInt(process.env.CORS_MAX_AGE) || 86400, // 24 hours
-  };
-
-  // Apply CORS middleware
-  app.use(cors(corsOptions));
-
   // Create GraphQL schema
   const schema = makeExecutableSchema({ 
     typeDefs, 
@@ -91,17 +77,13 @@ async function startServer() {
         user,
       };
     },
-    cors: false, // Disable Apollo's built-in CORS since we're using Express CORS
   });
 
   // Start Apollo Server
   await server.start();
   
   // Apply Apollo middleware to Express
-  server.applyMiddleware({ 
-    app,
-    cors: false, // Disable Apollo's CORS since we're using Express CORS
-  });
+  server.applyMiddleware({ app });
   
   // Set up WebSocket server for subscriptions
   const wsServer = new WebSocketServer({
@@ -117,7 +99,6 @@ async function startServer() {
   httpServer.listen(PORT, () => {
     console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
     console.log(`🔌 Subscriptions ready at ws://localhost:${PORT}${server.graphqlPath}`);
-    console.log(`🌐 CORS enabled for origins: ${Array.isArray(corsOptions.origin) ? corsOptions.origin.join(', ') : corsOptions.origin}`);
   });
 }
 
