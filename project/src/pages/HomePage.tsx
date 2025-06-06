@@ -184,7 +184,7 @@ const HomePage: React.FC = () => {
         >
           <div className="flex items-center space-x-4 mb-4">
             <img 
-              src={user.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+              src={user.profilePicture || 'https://media.istockphoto.com/id/1298261537/vector/blank-man-profile-head-icon-placeholder.jpg?s=612x612&w=0&k=20&c=CeT1RVWZzQDay4t54ookMaFsdi7ZHVFg2Y5v7hxigCA='} 
               alt={user.fullName} 
               className="w-12 h-12 rounded-full object-cover border-2 border-primary-100"
             />

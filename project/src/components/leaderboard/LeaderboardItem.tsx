@@ -54,7 +54,7 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
       
       <div className="flex-shrink-0 mr-4">
         <img 
-          src={entry.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+          src={entry.profilePicture || 'https://media.istockphoto.com/id/1298261537/vector/blank-man-profile-head-icon-placeholder.jpg?s=612x612&w=0&k=20&c=CeT1RVWZzQDay4t54ookMaFsdi7ZHVFg2Y5v7hxigCA='} 
           alt={entry.name || `User ${entry.userId}`} 
           className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
         />
