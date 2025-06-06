@@ -89,7 +89,10 @@ app.use(cors({
   await server.start();
   
   // Apply Apollo middleware to Express
-  server.applyMiddleware({ app });
+server.applyMiddleware({
+  app,
+  cors: false, // 🚫 disable Apollo's built-in CORS handling
+});
   
   // Set up WebSocket server for subscriptions
   const wsServer = new WebSocketServer({
