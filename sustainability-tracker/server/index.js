@@ -7,6 +7,7 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import { PubSub } from 'graphql-subscriptions';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 import { typeDefs } from './schema/typeDefs.js';
 import resolvers from './resolvers/index.js';
@@ -41,6 +42,16 @@ async function startServer() {
   // Create Express app and HTTP server
   const app = express();
   const httpServer = http.createServer(app);
+
+  const allowedOrigins = [
+    'https://cs-632-group1-a.vercel.app', // Replace with your actual Vercel frontend URL
+    'http://localhost:5173', // Replace with your actual Vercel frontend URL
+  ];
+
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }));
 
   // Create GraphQL schema
   const schema = makeExecutableSchema({ 
