@@ -13,7 +13,7 @@ interface LeaderboardEntry {
   }>;
   rank: number;
   name?: string;
-  avatar?: string;
+  profilePicture?: string;
 }
 
 interface LeaderboardItemProps {
@@ -54,14 +54,14 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
       
       <div className="flex-shrink-0 mr-4">
         <img 
-          src={entry.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
-          alt={entry.name || `${entry.userId}`} 
+          src={entry.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+          alt={entry.name || `User ${entry.userId}`} 
           className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
         />
       </div>
       
       <div className="flex-1">
-        <h3 className="font-medium text-gray-900">{entry.name || `${entry.userId}`}</h3>
+        <h3 className="font-medium text-gray-900">{entry.name || `User ${entry.userId}`}</h3>
         <div className="flex items-center">
           <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
             <div 

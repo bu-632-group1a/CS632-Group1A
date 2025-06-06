@@ -7,4 +7,14 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    proxy: {
+      '/graphql': {
+        target: 'https://cs632-group1a.onrender.com',
+        changeOrigin: true,
+        secure: false,
+        ws: true // Enable WebSocket proxy
+      }
+    }
+  }
 });

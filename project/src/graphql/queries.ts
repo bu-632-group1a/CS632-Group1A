@@ -44,3 +44,19 @@ export const GET_LEADERBOARD = gql`
     }
   }
 `;
+
+export const ME = gql`
+  query Me {
+    me {
+      id
+      firstName
+      lastName
+      fullName
+      email
+      profilePicture
+      role
+      createdAt
+      updatedAt
+    }
+  }
+`;

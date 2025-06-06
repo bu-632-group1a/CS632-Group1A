@@ -2,26 +2,38 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Menu, LogIn, Calendar, BarChart2, UserPlus,
-  Bookmark, Leaf, Layout, CheckSquare, BookOpen, Home, Sprout
+  Calendar, BarChart2, Bookmark, Leaf, Layout, 
+  CheckSquare, BookOpen, Home, Sprout, LogIn, 
+  UserPlus, LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
-  const navItems = [
-    { label: 'Home', icon: <Home size={20} />, path: '/' },
-    { label: 'Sign In', icon: <LogIn size={20} />, path: '/login' },
-    { label: 'Sign Up', icon: <UserPlus size={20} />, path: '/signup' },
-    { label: 'View Scheduled Sessions', icon: <Calendar size={20} />, path: '/sessions' },
-    { label: 'View Sustainability Leaderboard', icon: <BarChart2 size={20} />, path: '/leaderboard' },
-    { label: 'Add Session Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
-    { label: 'Track Sustainability Actions', icon: <Leaf size={20} />, path: '/sustainability' },
-    { label: 'Manage User Profile', icon: <Layout size={20} />, path: '/profile' },
-    { label: 'Session Check-In', icon: <CheckSquare size={20} />, path: '/check-in' },
-    { label: 'Event Bingo Card', icon: <BookOpen size={20} />, path: '/bingo' },
-  ];
+  const getNavItems = () => {
+    const commonItems = [
+      { label: 'Home', icon: <Home size={20} />, path: '/' },
+      { label: 'View Scheduled Sessions', icon: <Calendar size={20} />, path: '/sessions' },
+      { label: 'View Sustainability Leaderboard', icon: <BarChart2 size={20} />, path: '/leaderboard' },
+    ];
+
+    const authenticatedItems = [
+      { label: 'Add Session Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
+      { label: 'Track Sustainability Actions', icon: <Leaf size={20} />, path: '/sustainability' },
+      { label: 'Manage User Profile', icon: <Layout size={20} />, path: '/profile' },
+      { label: 'Session Check-In', icon: <CheckSquare size={20} />, path: '/check-in' },
+      { label: 'Event Bingo Card', icon: <BookOpen size={20} />, path: '/bingo' },
+      { label: 'Sign Out', icon: <LogOut size={20} />, path: '/logout' },
+    ];
+
+    const unauthenticatedItems = [
+      { label: 'Sign In', icon: <LogIn size={20} />, path: '/login' },
+      { label: 'Sign Up', icon: <UserPlus size={20} />, path: '/signup' },
+    ];
+
+    return [...commonItems, ...(isAuthenticated ? authenticatedItems : unauthenticatedItems)];
+  };
 
   const sidebarVariants = {
     hidden: { x: -300 },
@@ -40,6 +52,13 @@ const Sidebar: React.FC = () => {
   const itemVariants = {
     hidden: { opacity: 0, x: -20 },
     visible: { opacity: 1, x: 0 }
+  };
+
+  const handleLogout = async (e: React.MouseEvent, path: string) => {
+    if (path === '/logout') {
+      e.preventDefault();
+      await logout();
+    }
   };
 
   return (
@@ -63,7 +82,7 @@ const Sidebar: React.FC = () => {
       
       <nav className="p-4 flex-1">
         <ul className="space-y-2">
-          {navItems.map((item) => (
+          {getNavItems().map((item) => (
             <motion.li key={item.path} variants={itemVariants}>
               <NavLink
                 to={item.path}
@@ -74,6 +93,7 @@ const Sidebar: React.FC = () => {
                       : 'hover:bg-gray-100'
                   }`
                 }
+                onClick={(e) => handleLogout(e, item.path)}
               >
                 <span className="mr-3 text-primary-600">{item.icon}</span>
                 <span className="font-medium">{item.label}</span>
@@ -90,14 +110,14 @@ const Sidebar: React.FC = () => {
         >
           <div className="flex-shrink-0 mr-3">
             <img 
-              src={user.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+              src={user.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
               alt="Profile" 
               className="w-10 h-10 rounded-full object-cover"
             />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {user.name}
+              {user.fullName}
             </p>
             <p className="text-xs text-gray-500 truncate">
               {user.email}

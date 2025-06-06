@@ -22,8 +22,17 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
       navigate('/');
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
+    } catch (err: any) {
+      // Check if it's a network error with status code 400
+      if (err.networkError?.statusCode === 400 || err.message?.includes('400')) {
+        setError('Invalid email or password. Please check your credentials.');
+      } else if (err.networkError?.statusCode === 429) {
+        setError('Too many login attempts. Please try again later.');
+      } else if (!navigator.onLine) {
+        setError('No internet connection. Please check your network and try again.');
+      } else {
+        setError('Unable to sign in. Please try again later.');
+      }
     }
   };
 
@@ -107,19 +116,11 @@ const LoginPage: React.FC = () => {
                     variant="outline"
                     icon={<UserPlus size={20} />}
                   >
-                    Sign Up
+                    Create Account
                   </Button>
                 </Link>
               </div>
             </form>
-            
-            <div className="mt-6 text-center text-sm text-gray-600">
-              <p>
-                <a href="#" className="text-primary-600 hover:text-primary-800">
-                  Forgot your password?
-                </a>
-              </p>
-            </div>
           </CardContent>
         </Card>
       </motion.div>

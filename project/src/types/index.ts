@@ -1,11 +1,13 @@
 export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
   email: string;
-  avatar?: string;
-  sustainabilityScore: number;
-  badges: Badge[];
-  checkedInEvents: string[];
+  profilePicture?: string;
+  role: 'USER' | 'ADMIN';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Session {
@@ -49,7 +51,7 @@ export interface SustainabilityAction {
 export interface LeaderboardEntry {
   id: string;
   name: string;
-  avatar?: string;
+  profilePicture?: string;
   score: number;
   rank: number;
 }

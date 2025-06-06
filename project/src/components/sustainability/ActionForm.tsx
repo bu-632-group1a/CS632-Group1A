@@ -2,10 +2,10 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Leaf, AlertCircle, Home } from 'lucide-react';
-import { useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import { CREATE_SUSTAINABILITY_ACTION } from '../../graphql/mutations';
-import { GET_SUSTAINABILITY_ACTIONS, GET_SUSTAINABILITY_METRICS } from '../../graphql/queries';
+import { GET_SUSTAINABILITY_ACTIONS, GET_SUSTAINABILITY_METRICS, ME } from '../../graphql/queries';
 import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
@@ -34,6 +34,9 @@ const actionTypes = [
 
 const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
   const { user } = useAuth();
+  const { data: userData } = useQuery(ME);
+  const currentUser = userData?.me;
+  
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormInputs>();
   
   const [createAction, { loading, error }] = useMutation(CREATE_SUSTAINABILITY_ACTION, {
@@ -42,7 +45,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
-            userId: user?.id || 'test-user'
+            userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
           }
         }
       });
@@ -51,7 +54,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
-            userId: user?.id || 'test-user'
+            userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
           }
         },
         data: {
@@ -65,7 +68,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       const existingMetrics = cache.readQuery({
         query: GET_SUSTAINABILITY_METRICS,
         variables: {
-          userId: user?.id || 'test-user'
+          userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
         }
       });
       
@@ -73,7 +76,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         cache.writeQuery({
           query: GET_SUSTAINABILITY_METRICS,
           variables: {
-            userId: user?.id || 'test-user'
+            userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
           },
           data: {
             sustainabilityMetrics: {
@@ -97,7 +100,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         variables: {
           input: {
             ...data,
-            userId: user?.id || 'test-user',
+            userId: currentUser?.fullName || user?.fullName || 'Anonymous User',
             performedAt: new Date().toISOString(),
           },
         },

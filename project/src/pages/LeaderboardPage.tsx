@@ -5,13 +5,18 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import LeaderboardItem from '../components/leaderboard/LeaderboardItem';
 import Button from '../components/ui/Button';
-import { GET_LEADERBOARD } from '../graphql/queries';
+import { GET_LEADERBOARD, ME } from '../graphql/queries';
 import { useAuth } from '../context/AuthContext';
 
 const LeaderboardPage: React.FC = () => {
   const { user } = useAuth();
+  const { data: userData } = useQuery(ME);
+  const currentUser = userData?.me;
   
   const { data, loading, error } = useQuery(GET_LEADERBOARD, {
+    variables: {
+      userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
+    },
     pollInterval: 30000 // Poll every 30 seconds
   });
 
@@ -81,14 +86,14 @@ const LeaderboardPage: React.FC = () => {
                 
                 <div className="relative mb-4">
                   <img 
-                    src={entry.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
-                    alt={entry.name || `${entry.userId}`}
+                    src={entry.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+                    alt={entry.name || entry.userId}
                     className="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white shadow-lg"
                   />
                 </div>
                 
                 <div className="text-2xl font-bold text-gray-900 mb-2">
-                  {entry.name || `${entry.userId}`}
+                  {entry.name || entry.userId}
                 </div>
                 
                 <div className="text-primary-600 font-semibold mb-2">
@@ -122,7 +127,7 @@ const LeaderboardPage: React.FC = () => {
               <LeaderboardItem 
                 key={entry.userId} 
                 entry={entry}
-                isCurrentUser={user ? entry.userId === user.id : false}
+                isCurrentUser={currentUser ? entry.userId === currentUser.fullName : false}
               />
             ))}
           </div>

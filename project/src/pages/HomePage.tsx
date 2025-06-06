@@ -15,7 +15,7 @@ const HomePage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const { sessions } = useApp();
   
-  const featuredSessions = sessions.slice(0, 2);
+  const featuredSessions = sessions?.slice(0, 2) ?? [];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -184,12 +184,12 @@ const HomePage: React.FC = () => {
         >
           <div className="flex items-center space-x-4 mb-4">
             <img 
-              src={user.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
-              alt={user.name} 
+              src={user.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+              alt={user.fullName} 
               className="w-12 h-12 rounded-full object-cover border-2 border-primary-100"
             />
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Welcome back, {user.name.split(' ')[0]}!</h2>
+              <h2 className="text-xl font-bold text-gray-900">Welcome back, {user.firstName}!</h2>
               <p className="text-gray-600">Your conference journey continues.</p>
             </div>
           </div>
@@ -201,7 +201,7 @@ const HomePage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Points Earned</p>
-                <p className="text-lg font-bold text-primary-700">{user.sustainabilityScore} pts</p>
+                <p className="text-lg font-bold text-primary-700">{user.sustainabilityScore ?? 0} pts</p>
               </div>
             </div>
             
@@ -211,7 +211,7 @@ const HomePage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Badges Earned</p>
-                <p className="text-lg font-bold text-secondary-700">{user.badges.length}</p>
+                <p className="text-lg font-bold text-secondary-700">{user.badges?.length ?? 0}</p>
               </div>
             </div>
             
@@ -221,7 +221,7 @@ const HomePage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Sessions Attended</p>
-                <p className="text-lg font-bold text-accent-700">{user.checkedInEvents.length}</p>
+                <p className="text-lg font-bold text-accent-700">{user.checkedInEvents?.length ?? 0}</p>
               </div>
             </div>
           </div>
