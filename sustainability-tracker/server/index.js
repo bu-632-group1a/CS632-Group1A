@@ -6,13 +6,33 @@ import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { PubSub } from 'graphql-subscriptions';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
-import typeDefs from './schema/typeDefs.js';
+import { typeDefs } from './schema/typeDefs.js';
 import resolvers from './resolvers/index.js';
+import userResolvers from './resolvers/userResolvers.js';
 import { connectDB } from './config/db.js';
+import { verifyAccessToken } from './utils/auth.js';
+
+dotenv.config();
 
 // Create PubSub instance for subscriptions
 export const pubsub = new PubSub();
+
+// Merge resolvers
+const mergedResolvers = {
+  Query: {
+    ...resolvers.Query,
+    ...userResolvers.Query,
+  },
+  Mutation: {
+    ...resolvers.Mutation,
+    ...userResolvers.Mutation,
+  },
+  Subscription: resolvers.Subscription,
+  SustainabilityAction: resolvers.SustainabilityAction,
+  User: userResolvers.User,
+};
 
 async function startServer() {
   // Connect to MongoDB
@@ -23,16 +43,17 @@ async function startServer() {
   const httpServer = http.createServer(app);
 
   // Create GraphQL schema
-  const schema = makeExecutableSchema({ typeDefs, resolvers });
+  const schema = makeExecutableSchema({ 
+    typeDefs, 
+    resolvers: mergedResolvers 
+  });
 
   // Create Apollo Server
   const server = new ApolloServer({
     schema,
     formatError: (err) => {
-      // Custom error formatting
       console.error('GraphQL Error:', err);
       
-      // Return user-friendly error message
       return {
         message: err.message,
         code: err.extensions?.code || 'INTERNAL_SERVER_ERROR',
@@ -40,9 +61,20 @@ async function startServer() {
       };
     },
     context: ({ req }) => {
-      // Add context data here (e.g., authentication info)
+      let user = null;
+      
+      const token = req?.headers?.authorization?.split('Bearer ')[1];
+      if (token) {
+        try {
+          user = verifyAccessToken(token);
+        } catch (error) {
+          console.error('Token verification failed:', error.message);
+        }
+      }
+      
       return {
-        // Add any context needed for resolvers
+        req,
+        user,
       };
     },
   });

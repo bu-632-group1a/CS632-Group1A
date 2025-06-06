@@ -1,26 +1,58 @@
 import { gql } from 'apollo-server-express';
 
-const typeDefs = gql`
-  "A sustainability action performed by a user"
-  type SustainabilityAction {
+export const typeDefs = gql`
+  type User {
     id: ID!
-    "Type of sustainability action performed"
-    actionType: ActionType!
-    "Description or notes about the action"
-    description: String
-    "Impact score calculated for this action"
-    impactScore: Float!
-    "User ID who performed this action"
-    userId: String!
-    "Date when the action was performed"
-    performedAt: String!
-    "Date when the record was created"
+    firstName: String!
+    lastName: String!
+    fullName: String!
+    username: String!
+    email: String!
+    role: UserRole!
     createdAt: String!
-    "Date when the record was last updated"
     updatedAt: String!
   }
 
-  "Types of sustainability actions that can be performed"
+  enum UserRole {
+    USER
+    ADMIN
+  }
+
+  input RegisterInput {
+    firstName: String!
+    lastName: String!
+    username: String!
+    email: String!
+    password: String!
+  }
+
+  input LoginInput {
+    email: String!
+    password: String!
+  }
+
+  type AuthPayload {
+    user: User!
+    accessToken: String!
+    refreshToken: String!
+  }
+
+  type TokenPayload {
+    accessToken: String!
+    refreshToken: String!
+  }
+
+  type SustainabilityAction {
+    id: ID!
+    actionType: ActionType!
+    description: String
+    impactScore: Float!
+    userId: String!
+    performedAt: String!
+    createdAt: String!
+    updatedAt: String!
+  }
+
   enum ActionType {
     REUSABLE_BOTTLE
     PUBLIC_TRANSPORT
@@ -34,7 +66,6 @@ const typeDefs = gql`
     OTHER
   }
 
-  "Input for creating a new sustainability action"
   input CreateSustainabilityActionInput {
     actionType: ActionType!
     description: String
@@ -43,7 +74,6 @@ const typeDefs = gql`
     userId: String!
   }
 
-  "Input for updating an existing sustainability action"
   input UpdateSustainabilityActionInput {
     actionType: ActionType
     description: String
@@ -51,7 +81,6 @@ const typeDefs = gql`
     performedAt: String
   }
 
-  "Filter options for querying sustainability actions"
   input SustainabilityActionFilterInput {
     actionType: ActionType
     fromDate: String
@@ -59,93 +88,60 @@ const typeDefs = gql`
     userId: String
   }
 
-  "Aggregated metrics about sustainability actions"
   type SustainabilityMetrics {
-    "Total number of actions recorded"
     totalActions: Int!
-    "Sum of impact scores across all actions"
     totalImpact: Float!
-    "Count of actions by type"
     actionsByType: [ActionTypeCount!]!
-    "Average impact score"
     averageImpact: Float!
   }
 
-  "Count of actions by type"
   type ActionTypeCount {
-    "Type of sustainability action"
     actionType: ActionType!
-    "Number of actions of this type"
     count: Int!
   }
 
-  "Leaderboard entry showing user's sustainability performance"
   type LeaderboardEntry {
-    "User ID"
     userId: String
-    "Total number of actions performed"
     totalActions: Int!
-    "Total impact score across all actions"
     totalImpact: Float!
-    "Average impact score per action"
     averageImpact: Float!
-    "Breakdown of actions by type"
     actionsByType: [ActionTypeCount!]!
-    "User's rank on the leaderboard"
     rank: Int!
   }
 
-  "User sustainability metrics"
   type UserSustainabilityMetrics {
-    "User ID"
     userId: String
-    "Total number of actions performed"
     totalActions: Int!
-    "Sum of impact scores across all actions"
     totalImpact: Float!
-    "Average impact score per action"
     averageImpact: Float!
-    "Breakdown of actions by type"
     actionsByType: [ActionTypeCount!]!
-    "Recent actions by this user"
     recentActions: [SustainabilityAction!]
   }
 
-  "Root Query type"
   type Query {
-    "Get all sustainability actions"
+    me: User!
+    users: [User!]!
     sustainabilityActions(filter: SustainabilityActionFilterInput): [SustainabilityAction!]!
-    "Get a specific sustainability action by ID"
     sustainabilityAction(id: ID!): SustainabilityAction
-    "Get aggregated metrics about sustainability actions"
     sustainabilityMetrics(userId: String): SustainabilityMetrics!
-    "Get leaderboard rankings"
     leaderboard(limit: Int): [LeaderboardEntry!]!
-    "Get sustainability metrics for all users"
     allUserMetrics: [UserSustainabilityMetrics!]!
   }
 
-  "Root Mutation type"
   type Mutation {
-    "Create a new sustainability action"
+    register(input: RegisterInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
+    refreshToken(refreshToken: String!): TokenPayload!
+    logout(refreshToken: String!): Boolean!
     createSustainabilityAction(input: CreateSustainabilityActionInput!): SustainabilityAction!
-    "Update an existing sustainability action"
     updateSustainabilityAction(id: ID!, input: UpdateSustainabilityActionInput!): SustainabilityAction!
-    "Delete a sustainability action"
     deleteSustainabilityAction(id: ID!): Boolean!
   }
 
-  "Root Subscription type"
   type Subscription {
-    "Subscribe to sustainability action creation events"
     sustainabilityActionCreated: SustainabilityAction!
-    "Subscribe to sustainability action update events"
     sustainabilityActionUpdated: SustainabilityAction!
-    "Subscribe to sustainability action deletion events"
     sustainabilityActionDeleted: ID!
-    "Subscribe to leaderboard updates"
     leaderboardUpdated: [LeaderboardEntry!]!
   }
 `;
-
-export default typeDefs;

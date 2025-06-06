@@ -160,65 +160,42 @@ const resolvers = {
 
     allUserMetrics: async () => {
       try {
-        const users = await SustainabilityAction.distinct('userId');
-        const userMetrics = [];
-
-        for (const userId of users) {
-          // Get basic metrics
-          const actions = await SustainabilityAction.find({ userId })
-            .sort({ performedAt: -1 })
-            .limit(5);
-
-          const metrics = await SustainabilityAction.aggregate([
-            { $match: { userId } },
-            {
-              $group: {
-                _id: null,
-                totalActions: { $sum: 1 },
-                totalImpact: { $sum: '$impactScore' },
-              }
+        // Get total metrics across all actions
+        const metrics = await SustainabilityAction.aggregate([
+          {
+            $group: {
+              _id: null,
+              totalActions: { $sum: 1 },
+              totalImpact: { $sum: '$impactScore' },
             }
-          ]);
+          }
+        ]);
 
-          const actionsByType = await SustainabilityAction.aggregate([
-            { $match: { userId } },
-            {
-              $group: {
-                _id: '$actionType',
-                count: { $sum: 1 }
-              }
-            },
-            {
-              $project: {
-                actionType: '$_id',
-                count: 1,
-                _id: 0
-              }
+        // Get actions grouped by type
+        const actionsByType = await SustainabilityAction.aggregate([
+          {
+            $group: {
+              _id: '$actionType',
+              count: { $sum: 1 }
             }
-          ]);
+          },
+          {
+            $project: {
+              actionType: '$_id',
+              count: 1,
+              _id: 0
+            }
+          }
+        ]);
 
-          const userMetric = {
-            userId,
-            totalActions: metrics[0]?.totalActions || 0,
-            totalImpact: metrics[0]?.totalImpact || 0,
-            averageImpact: metrics[0]?.totalActions ? metrics[0].totalImpact / metrics[0].totalActions : 0,
-            actionsByType,
-            recentActions: actions.map(action => ({
-              id: action._id.toString(),
-              actionType: action.actionType,
-              description: action.description,
-              impactScore: action.impactScore,
-              userId: action.userId,
-              performedAt: action.performedAt.toISOString(),
-              createdAt: action.createdAt.toISOString(),
-              updatedAt: action.updatedAt.toISOString()
-            }))
-          };
-
-          userMetrics.push(userMetric);
-        }
-
-        return userMetrics;
+        // Return aggregated metrics
+        return [{
+          userId: null,
+          totalActions: metrics[0]?.totalActions || 0,
+          totalImpact: metrics[0]?.totalImpact || 0,
+          averageImpact: metrics[0]?.totalActions ? metrics[0].totalImpact / metrics[0].totalActions : 0,
+          actionsByType
+        }];
       } catch (error) {
         throw new GraphQLError(`Failed to fetch user metrics: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
