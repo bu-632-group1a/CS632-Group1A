@@ -1,7 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
-import { LeaderboardEntry } from '../../types';
+
+interface LeaderboardEntry {
+  userId: string;
+  totalActions: number;
+  totalImpact: number;
+  averageImpact: number;
+  actionsByType: Array<{
+    actionType: string;
+    count: number;
+  }>;
+  rank: number;
+  name?: string;
+  avatar?: string;
+}
 
 interface LeaderboardItemProps {
   entry: LeaderboardEntry;
@@ -22,64 +35,43 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
     }
   };
 
-  const getTrophyColor = (rank: number): string => {
-    switch (rank) {
-      case 1:
-        return 'text-yellow-500';
-      case 2:
-        return 'text-gray-400';
-      case 3:
-        return 'text-amber-600';
-      default:
-        return 'text-gray-400';
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
-
   return (
     <motion.div
       className={`
         p-4 rounded-lg mb-3 flex items-center
         ${isCurrentUser ? 'bg-primary-50 border border-primary-200' : 'bg-white shadow-soft'}
       `}
-      variants={itemVariants}
-      initial="hidden"
-      animate="visible"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.3 }}
     >
       <div className="flex-shrink-0 w-10 mr-4 text-center">
-        {entry.rank <= 3 ? (
-          <Trophy className={getTrophyColor(entry.rank)} size={24} />
-        ) : (
-          <span className={`font-bold text-lg ${getRankColor(entry.rank)}`}>
-            {entry.rank}
-          </span>
-        )}
+        <span className={`font-bold text-lg ${getRankColor(entry.rank)}`}>
+          {entry.rank}
+        </span>
       </div>
       
       <div className="flex-shrink-0 mr-4">
         <img 
           src={entry.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
-          alt={entry.name} 
+          alt={entry.name || `${entry.userId}`} 
           className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
         />
       </div>
       
       <div className="flex-1">
-        <h3 className="font-medium text-gray-900">{entry.name}</h3>
+        <h3 className="font-medium text-gray-900">{entry.name || `${entry.userId}`}</h3>
         <div className="flex items-center">
           <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
             <div 
               className="bg-primary-500 h-2 rounded-full" 
-              style={{ width: `${Math.min(100, (entry.score / 2000) * 100)}%` }}
-            ></div>
+              style={{ width: `${Math.min(100, (entry.totalImpact / 2000) * 100)}%` }}
+            />
           </div>
-          <span className="text-sm font-semibold text-primary-700">{entry.score} pts</span>
+          <span className="text-sm font-semibold text-primary-700 whitespace-nowrap">
+            {entry.totalImpact.toFixed(0)} pts
+          </span>
         </div>
       </div>
       

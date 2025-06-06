@@ -2,40 +2,34 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Users, Medal, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
 import LeaderboardItem from '../components/leaderboard/LeaderboardItem';
 import Button from '../components/ui/Button';
-import { mockLeaderboard } from '../data/mockData';
+import { GET_LEADERBOARD } from '../graphql/queries';
 import { useAuth } from '../context/AuthContext';
 
 const LeaderboardPage: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   
-  const topThree = mockLeaderboard.slice(0, 3);
-  const restOfLeaderboard = mockLeaderboard.slice(3);
+  const { data, loading, error } = useQuery(GET_LEADERBOARD, {
+    pollInterval: 30000 // Poll every 30 seconds
+  });
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
+  const leaderboard = data?.leaderboard || [];
+  const topThree = leaderboard.slice(0, 3);
+  const restOfLeaderboard = leaderboard.slice(3);
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
+  if (error) {
+    return (
+      <div className="bg-red-50 p-4 rounded-lg">
+        <p className="text-red-700">Failed to load leaderboard data. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
-    <motion.div 
-      className="space-y-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <motion.div variants={itemVariants} className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Sustainability Leaderboard</h1>
           <p className="text-gray-600">See who's making the biggest impact at the event</p>
@@ -49,96 +43,92 @@ const LeaderboardPage: React.FC = () => {
             Home
           </Button>
         </Link>
-      </motion.div>
+      </div>
       
-      <motion.div variants={itemVariants}>
-        <div className="bg-white rounded-xl shadow-soft p-6 mb-6">
-          <div className="flex items-center mb-6">
-            <div className="bg-primary-100 p-2 rounded-full mr-4">
-              <Trophy size={24} className="text-primary-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Top Performers</h2>
-              <p className="text-gray-600">The attendees with the highest sustainability scores</p>
-            </div>
+      <div className="bg-white rounded-xl shadow-soft p-6 mb-6">
+        <div className="flex items-center mb-6">
+          <div className="bg-primary-100 p-2 rounded-full mr-4">
+            <Trophy size={24} className="text-primary-600" />
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {topThree.map((entry, index) => {
-              const rank = index + 1;
-              let bgColor = 'bg-white';
-              let textColor = 'text-gray-900';
-              let borderColor = 'border-gray-100';
-              let medalColor = 'text-gray-400';
-              
-              if (rank === 1) {
-                bgColor = 'bg-yellow-50';
-                borderColor = 'border-yellow-200';
-                medalColor = 'text-yellow-500';
-              } else if (rank === 2) {
-                bgColor = 'bg-gray-50';
-                borderColor = 'border-gray-200';
-                medalColor = 'text-gray-400';
-              } else if (rank === 3) {
-                bgColor = 'bg-amber-50';
-                borderColor = 'border-amber-200';
-                medalColor = 'text-amber-600';
-              }
-              
-              return (
-                <motion.div 
-                  key={entry.id}
-                  whileHover={{ y: -5 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className={`${bgColor} border ${borderColor} rounded-lg p-4 text-center flex flex-col items-center`}
-                >
-                  <div className={`${medalColor} mb-2`}>
-                    <Medal size={32} />
-                  </div>
-                  
-                  <div className="relative mb-3">
-                    <div className="absolute -top-2 -right-2 bg-white rounded-full w-6 h-6 flex items-center justify-center border border-gray-200 shadow-sm">
-                      <span className="text-xs font-bold">{rank}</span>
-                    </div>
-                    <img 
-                      src={entry.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
-                      alt={entry.name} 
-                      className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md"
-                    />
-                  </div>
-                  
-                  <h3 className={`font-bold ${textColor} text-lg mb-1`}>{entry.name}</h3>
-                  <p className="text-primary-600 font-semibold">{entry.score} pts</p>
-                  
-                  {isAuthenticated && user && entry.id === user.id && (
-                    <span className="mt-2 bg-primary-100 text-primary-800 text-xs px-2 py-0.5 rounded-full">
-                      You
-                    </span>
-                  )}
-                </motion.div>
-              );
-            })}
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Top Performers</h2>
+            <p className="text-gray-600">The attendees with the highest sustainability scores</p>
           </div>
         </div>
-      </motion.div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {topThree.map((entry, index) => {
+            const rank = index + 1;
+            const bgColor = rank === 1 ? 'bg-yellow-50' : rank === 2 ? 'bg-gray-50' : 'bg-amber-50';
+            const borderColor = rank === 1 ? 'border-yellow-100' : rank === 2 ? 'border-gray-100' : 'border-amber-100';
+            const medalColor = rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-400' : 'text-amber-600';
+            
+            return (
+              <motion.div 
+                key={entry.userId}
+                className={`${bgColor} border ${borderColor} rounded-xl p-6 text-center relative`}
+                whileHover={{ y: -5 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              >
+                <Medal 
+                  size={48} 
+                  className={`${medalColor} absolute top-4 right-4`}
+                />
+                
+                <div className="absolute -top-2 -right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center border border-gray-200 shadow-sm">
+                  <span className="text-sm font-bold">{rank}</span>
+                </div>
+                
+                <div className="relative mb-4">
+                  <img 
+                    src={entry.avatar || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
+                    alt={entry.name || `${entry.userId}`}
+                    className="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white shadow-lg"
+                  />
+                </div>
+                
+                <div className="text-2xl font-bold text-gray-900 mb-2">
+                  {entry.name || `${entry.userId}`}
+                </div>
+                
+                <div className="text-primary-600 font-semibold mb-2">
+                  {entry.totalImpact.toFixed(0)} pts
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  {entry.totalActions} actions
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
       
-      <motion.div variants={itemVariants}>
+      <div>
         <div className="flex items-center mb-4">
           <Users size={20} className="text-primary-600 mr-2" />
           <h2 className="text-xl font-bold text-gray-900">All Participants</h2>
         </div>
         
-        <div>
-          {restOfLeaderboard.map(entry => (
-            <LeaderboardItem 
-              key={entry.id} 
-              entry={entry} 
-              isCurrentUser={isAuthenticated && user ? entry.id === user.id : false}
-            />
-          ))}
-        </div>
-      </motion.div>
-    </motion.div>
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div>
+            {restOfLeaderboard.map((entry) => (
+              <LeaderboardItem 
+                key={entry.userId} 
+                entry={entry}
+                isCurrentUser={user ? entry.userId === user.id : false}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

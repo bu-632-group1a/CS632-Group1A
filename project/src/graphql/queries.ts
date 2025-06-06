@@ -28,3 +28,19 @@ export const GET_SUSTAINABILITY_METRICS = gql`
     }
   }
 `;
+
+export const GET_LEADERBOARD = gql`
+  query GetLeaderboard($limit: Int) {
+    leaderboard(limit: $limit) {
+      userId
+      totalActions
+      totalImpact
+      averageImpact
+      actionsByType {
+        actionType
+        count
+      }
+      rank
+    }
+  }
+`;
