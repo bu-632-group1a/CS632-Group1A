@@ -79,6 +79,38 @@ const typeDefs = gql`
     count: Int!
   }
 
+  "Leaderboard entry showing user's sustainability performance"
+  type LeaderboardEntry {
+    "User ID"
+    userId: String
+    "Total number of actions performed"
+    totalActions: Int!
+    "Total impact score across all actions"
+    totalImpact: Float!
+    "Average impact score per action"
+    averageImpact: Float!
+    "Breakdown of actions by type"
+    actionsByType: [ActionTypeCount!]!
+    "User's rank on the leaderboard"
+    rank: Int!
+  }
+
+  "User sustainability metrics"
+  type UserSustainabilityMetrics {
+    "User ID"
+    userId: String
+    "Total number of actions performed"
+    totalActions: Int!
+    "Sum of impact scores across all actions"
+    totalImpact: Float!
+    "Average impact score per action"
+    averageImpact: Float!
+    "Breakdown of actions by type"
+    actionsByType: [ActionTypeCount!]!
+    "Recent actions by this user"
+    recentActions: [SustainabilityAction!]
+  }
+
   "Root Query type"
   type Query {
     "Get all sustainability actions"
@@ -87,6 +119,10 @@ const typeDefs = gql`
     sustainabilityAction(id: ID!): SustainabilityAction
     "Get aggregated metrics about sustainability actions"
     sustainabilityMetrics(userId: String): SustainabilityMetrics!
+    "Get leaderboard rankings"
+    leaderboard(limit: Int): [LeaderboardEntry!]!
+    "Get sustainability metrics for all users"
+    allUserMetrics: [UserSustainabilityMetrics!]!
   }
 
   "Root Mutation type"
@@ -107,6 +143,8 @@ const typeDefs = gql`
     sustainabilityActionUpdated: SustainabilityAction!
     "Subscribe to sustainability action deletion events"
     sustainabilityActionDeleted: ID!
+    "Subscribe to leaderboard updates"
+    leaderboardUpdated: [LeaderboardEntry!]!
   }
 `;
 

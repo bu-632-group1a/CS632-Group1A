@@ -71,6 +71,9 @@ sustainabilityActionSchema.index({ performedAt: 1, actionType: 1 });
 // Create compound index for user-specific queries
 sustainabilityActionSchema.index({ userId: 1, performedAt: -1 });
 
+// Create compound index for leaderboard queries
+sustainabilityActionSchema.index({ userId: 1, impactScore: -1 });
+
 // Create index for aggregation operations
 sustainabilityActionSchema.index({ actionType: 1, impactScore: 1 });
 

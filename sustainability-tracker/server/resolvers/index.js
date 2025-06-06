@@ -8,16 +8,15 @@ const EVENTS = {
   SUSTAINABILITY_ACTION_CREATED: 'SUSTAINABILITY_ACTION_CREATED',
   SUSTAINABILITY_ACTION_UPDATED: 'SUSTAINABILITY_ACTION_UPDATED',
   SUSTAINABILITY_ACTION_DELETED: 'SUSTAINABILITY_ACTION_DELETED',
+  LEADERBOARD_UPDATED: 'LEADERBOARD_UPDATED',
 };
 
 const resolvers = {
   Query: {
-    // Get all sustainability actions with optional filtering
     sustainabilityActions: async (_, { filter = {} }) => {
       try {
         const query = {};
         
-        // Apply filters if provided
         if (filter.actionType) {
           query.actionType = filter.actionType;
         }
@@ -26,7 +25,6 @@ const resolvers = {
           query.userId = filter.userId;
         }
         
-        // Apply date range filter if provided
         if (filter.fromDate || filter.toDate) {
           query.performedAt = {};
           
@@ -47,7 +45,6 @@ const resolvers = {
       }
     },
     
-    // Get a specific sustainability action by ID
     sustainabilityAction: async (_, { id }) => {
       try {
         const action = await SustainabilityAction.findById(id);
@@ -70,14 +67,11 @@ const resolvers = {
       }
     },
     
-    // Get aggregated metrics about sustainability actions
     sustainabilityMetrics: async (_, { userId }) => {
       try {
-        // Get total actions and impact
+        const match = userId ? { userId } : {};
         const { totalImpact, count } = await SustainabilityAction.calculateTotalImpact(userId);
         
-        // Get action counts by type
-        const match = userId ? { userId } : {};
         const actionsByTypeResult = await SustainabilityAction.aggregate([
           { $match: match },
           {
@@ -107,13 +101,135 @@ const resolvers = {
         });
       }
     },
+
+    leaderboard: async (_, { limit = 10 }) => {
+      try {
+        const leaderboardData = await SustainabilityAction.aggregate([
+          {
+            $group: {
+              _id: '$userId',
+              totalActions: { $sum: 1 },
+              totalImpact: { $sum: '$impactScore' },
+            },
+          },
+          {
+            $project: {
+              userId: '$_id',
+              totalActions: 1,
+              totalImpact: 1,
+              averageImpact: { $divide: ['$totalImpact', '$totalActions'] },
+              _id: 0,
+            },
+          },
+          { $sort: { totalImpact: -1 } },
+          { $limit: limit },
+        ]);
+
+        const rankedData = leaderboardData.map((entry, index) => ({
+          ...entry,
+          rank: index + 1,
+        }));
+
+        for (const entry of rankedData) {
+          const actionsByType = await SustainabilityAction.aggregate([
+            { $match: { userId: entry.userId } },
+            {
+              $group: {
+                _id: '$actionType',
+                count: { $sum: 1 },
+              },
+            },
+            {
+              $project: {
+                actionType: '$_id',
+                count: 1,
+                _id: 0,
+              },
+            },
+          ]);
+          entry.actionsByType = actionsByType;
+        }
+
+        return rankedData;
+      } catch (error) {
+        throw new GraphQLError(`Failed to fetch leaderboard: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    allUserMetrics: async () => {
+      try {
+        const users = await SustainabilityAction.distinct('userId');
+        const userMetrics = [];
+
+        for (const userId of users) {
+          // Get basic metrics
+          const actions = await SustainabilityAction.find({ userId })
+            .sort({ performedAt: -1 })
+            .limit(5);
+
+          const metrics = await SustainabilityAction.aggregate([
+            { $match: { userId } },
+            {
+              $group: {
+                _id: null,
+                totalActions: { $sum: 1 },
+                totalImpact: { $sum: '$impactScore' },
+              }
+            }
+          ]);
+
+          const actionsByType = await SustainabilityAction.aggregate([
+            { $match: { userId } },
+            {
+              $group: {
+                _id: '$actionType',
+                count: { $sum: 1 }
+              }
+            },
+            {
+              $project: {
+                actionType: '$_id',
+                count: 1,
+                _id: 0
+              }
+            }
+          ]);
+
+          const userMetric = {
+            userId,
+            totalActions: metrics[0]?.totalActions || 0,
+            totalImpact: metrics[0]?.totalImpact || 0,
+            averageImpact: metrics[0]?.totalActions ? metrics[0].totalImpact / metrics[0].totalActions : 0,
+            actionsByType,
+            recentActions: actions.map(action => ({
+              id: action._id.toString(),
+              actionType: action.actionType,
+              description: action.description,
+              impactScore: action.impactScore,
+              userId: action.userId,
+              performedAt: action.performedAt.toISOString(),
+              createdAt: action.createdAt.toISOString(),
+              updatedAt: action.updatedAt.toISOString()
+            }))
+          };
+
+          userMetrics.push(userMetric);
+        }
+
+        return userMetrics;
+      } catch (error) {
+        throw new GraphQLError(`Failed to fetch user metrics: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
   },
   
   Mutation: {
-    // Create a new sustainability action
     createSustainabilityAction: async (_, { input }) => {
       try {
-        // Validate input
         const { error } = validateCreateAction(input);
         if (error) {
           throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
@@ -121,23 +237,24 @@ const resolvers = {
           });
         }
         
-        // Set default performed date to now if not provided
         if (!input.performedAt) {
           input.performedAt = new Date().toISOString();
         }
         
-        // Create new sustainability action
         const newAction = new SustainabilityAction({
           ...input,
           performedAt: new Date(input.performedAt),
         });
         
-        // Save to database
         await newAction.save();
         
-        // Publish subscription event
         pubsub.publish(EVENTS.SUSTAINABILITY_ACTION_CREATED, {
           sustainabilityActionCreated: newAction,
+        });
+
+        const leaderboard = await resolvers.Query.leaderboard(_, { limit: 10 });
+        pubsub.publish(EVENTS.LEADERBOARD_UPDATED, {
+          leaderboardUpdated: leaderboard,
         });
         
         return newAction;
@@ -152,10 +269,8 @@ const resolvers = {
       }
     },
     
-    // Update an existing sustainability action
     updateSustainabilityAction: async (_, { id, input }) => {
       try {
-        // Validate input
         const { error } = validateUpdateAction(input);
         if (error) {
           throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
@@ -163,12 +278,10 @@ const resolvers = {
           });
         }
         
-        // Convert performedAt to Date object if provided
         if (input.performedAt) {
           input.performedAt = new Date(input.performedAt);
         }
         
-        // Find and update the action
         const updatedAction = await SustainabilityAction.findByIdAndUpdate(
           id,
           { $set: input },
@@ -181,9 +294,13 @@ const resolvers = {
           });
         }
         
-        // Publish subscription event
         pubsub.publish(EVENTS.SUSTAINABILITY_ACTION_UPDATED, {
           sustainabilityActionUpdated: updatedAction,
+        });
+
+        const leaderboard = await resolvers.Query.leaderboard(_, { limit: 10 });
+        pubsub.publish(EVENTS.LEADERBOARD_UPDATED, {
+          leaderboardUpdated: leaderboard,
         });
         
         return updatedAction;
@@ -199,7 +316,6 @@ const resolvers = {
       }
     },
     
-    // Delete a sustainability action
     deleteSustainabilityAction: async (_, { id }) => {
       try {
         const deletedAction = await SustainabilityAction.findByIdAndDelete(id);
@@ -210,9 +326,13 @@ const resolvers = {
           });
         }
         
-        // Publish subscription event
         pubsub.publish(EVENTS.SUSTAINABILITY_ACTION_DELETED, {
           sustainabilityActionDeleted: id,
+        });
+
+        const leaderboard = await resolvers.Query.leaderboard(_, { limit: 10 });
+        pubsub.publish(EVENTS.LEADERBOARD_UPDATED, {
+          leaderboardUpdated: leaderboard,
         });
         
         return true;
@@ -229,23 +349,23 @@ const resolvers = {
   },
   
   Subscription: {
-    // Subscribe to sustainability action creation events
     sustainabilityActionCreated: {
       subscribe: () => pubsub.asyncIterator([EVENTS.SUSTAINABILITY_ACTION_CREATED]),
     },
     
-    // Subscribe to sustainability action update events
     sustainabilityActionUpdated: {
       subscribe: () => pubsub.asyncIterator([EVENTS.SUSTAINABILITY_ACTION_UPDATED]),
     },
     
-    // Subscribe to sustainability action deletion events
     sustainabilityActionDeleted: {
       subscribe: () => pubsub.asyncIterator([EVENTS.SUSTAINABILITY_ACTION_DELETED]),
     },
+
+    leaderboardUpdated: {
+      subscribe: () => pubsub.asyncIterator([EVENTS.LEADERBOARD_UPDATED]),
+    },
   },
   
-  // Type resolvers for SustainabilityAction
   SustainabilityAction: {
     id: (parent) => parent._id || parent.id,
     performedAt: (parent) => parent.performedAt.toISOString(),
