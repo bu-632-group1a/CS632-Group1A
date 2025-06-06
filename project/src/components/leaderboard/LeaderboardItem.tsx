@@ -55,13 +55,13 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
       <div className="flex-shrink-0 mr-4">
         <img 
           src={entry.profilePicture || 'https://media.istockphoto.com/id/1298261537/vector/blank-man-profile-head-icon-placeholder.jpg?s=612x612&w=0&k=20&c=CeT1RVWZzQDay4t54ookMaFsdi7ZHVFg2Y5v7hxigCA='} 
-          alt={entry.name || `User ${entry.userId}`} 
+          alt={entry.name || `${entry.userId}`} 
           className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
         />
       </div>
       
       <div className="flex-1">
-        <h3 className="font-medium text-gray-900">{entry.name || `User ${entry.userId}`}</h3>
+        <h3 className="font-medium text-gray-900">{entry.name || `${entry.userId}`}</h3>
         <div className="flex items-center">
           <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
             <div 
