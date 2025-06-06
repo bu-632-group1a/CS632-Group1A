@@ -1,11 +1,13 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { Leaf, AlertCircle } from 'lucide-react';
+import { Leaf, AlertCircle, Home } from 'lucide-react';
 import { useMutation } from '@apollo/client';
+import { Link } from 'react-router-dom';
 import { CREATE_SUSTAINABILITY_ACTION } from '../../graphql/mutations';
 import { GET_SUSTAINABILITY_ACTIONS, GET_SUSTAINABILITY_METRICS } from '../../graphql/queries';
 import Button from '../ui/Button';
+import { useAuth } from '../../context/AuthContext';
 
 interface ActionFormProps {
   onSuccess?: () => void;
@@ -14,7 +16,6 @@ interface ActionFormProps {
 interface FormInputs {
   actionType: string;
   description: string;
-  performedAt: string;
 }
 
 const actionTypes = [
@@ -27,21 +28,32 @@ const actionTypes = [
   { value: 'ENERGY_SAVING', label: 'Saved Energy' },
   { value: 'WATER_CONSERVATION', label: 'Conserved Water' },
   { value: 'WASTE_REDUCTION', label: 'Reduced Waste' },
+  { value: 'HOME', label: 'Home Energy Efficiency' },
   { value: 'OTHER', label: 'Other Action' },
 ];
 
 const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
+  const { user } = useAuth();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormInputs>();
   
   const [createAction, { loading, error }] = useMutation(CREATE_SUSTAINABILITY_ACTION, {
     update(cache, { data: { createSustainabilityAction } }) {
-      // Update actions list
       const existingActions = cache.readQuery({
         query: GET_SUSTAINABILITY_ACTIONS,
+        variables: {
+          filter: {
+            userId: user?.id || 'test-user'
+          }
+        }
       });
       
       cache.writeQuery({
         query: GET_SUSTAINABILITY_ACTIONS,
+        variables: {
+          filter: {
+            userId: user?.id || 'test-user'
+          }
+        },
         data: {
           sustainabilityActions: [
             createSustainabilityAction,
@@ -50,20 +62,24 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         },
       });
 
-      // Update metrics
       const existingMetrics = cache.readQuery({
         query: GET_SUSTAINABILITY_METRICS,
+        variables: {
+          userId: user?.id || 'test-user'
+        }
       });
       
       if (existingMetrics?.sustainabilityMetrics) {
-        const { sustainabilityMetrics } = existingMetrics;
         cache.writeQuery({
           query: GET_SUSTAINABILITY_METRICS,
+          variables: {
+            userId: user?.id || 'test-user'
+          },
           data: {
             sustainabilityMetrics: {
-              ...sustainabilityMetrics,
-              totalActions: sustainabilityMetrics.totalActions + 1,
-              totalImpact: sustainabilityMetrics.totalImpact + createSustainabilityAction.impactScore,
+              ...existingMetrics.sustainabilityMetrics,
+              totalActions: existingMetrics.sustainabilityMetrics.totalActions + 1,
+              totalImpact: existingMetrics.sustainabilityMetrics.totalImpact + createSustainabilityAction.impactScore,
             },
           },
         });
@@ -81,6 +97,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         variables: {
           input: {
             ...data,
+            userId: user?.id || 'test-user',
             performedAt: new Date().toISOString(),
           },
         },
@@ -98,14 +115,25 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       onSubmit={handleSubmit(onSubmit)}
       className="bg-white rounded-xl shadow-soft p-6"
     >
-      <div className="flex items-center mb-6">
-        <div className="bg-primary-100 p-2 rounded-full mr-4">
-          <Leaf className="w-6 h-6 text-primary-600" />
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center">
+          <div className="bg-primary-100 p-2 rounded-full mr-4">
+            <Leaf className="w-6 h-6 text-primary-600" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Log Sustainability Action</h2>
+            <p className="text-gray-600">Record your eco-friendly actions</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Log Sustainability Action</h2>
-          <p className="text-gray-600">Record your eco-friendly actions</p>
-        </div>
+        <Link to="/">
+          <Button
+            variant="ghost"
+            icon={<Home size={20} />}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            Home
+          </Button>
+        </Link>
       </div>
 
       {error && (

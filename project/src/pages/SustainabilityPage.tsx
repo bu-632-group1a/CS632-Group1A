@@ -9,23 +9,18 @@ import Card, { CardContent } from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 
 const SustainabilityPage: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const userId = user?.id || 'test-user';
   
-  const { data: metricsData, loading: metricsLoading, error: metricsError } = useQuery(GET_SUSTAINABILITY_METRICS);
-  const { data: actionsData, loading: actionsLoading, error: actionsError } = useQuery(GET_SUSTAINABILITY_ACTIONS);
-
-  // Authentication check temporarily disabled for testing
-  /* if (!isAuthenticated) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Please sign in</h2>
-        <p className="text-gray-600">You need to be signed in to track sustainability actions.</p>
-        <a href="/login" className="text-primary-600 hover:text-primary-800 font-medium mt-4 inline-block">
-          Go to login
-        </a>
-      </div>
-    );
-  } */
+  const { data: metricsData, loading: metricsLoading, error: metricsError } = useQuery(GET_SUSTAINABILITY_METRICS, {
+    variables: { userId }
+  });
+  
+  const { data: actionsData, loading: actionsLoading, error: actionsError } = useQuery(GET_SUSTAINABILITY_ACTIONS, {
+    variables: { 
+      filter: { userId }
+    }
+  });
 
   const containerVariants = {
     hidden: { opacity: 0 },

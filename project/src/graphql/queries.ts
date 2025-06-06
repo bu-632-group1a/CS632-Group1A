@@ -7,6 +7,7 @@ export const GET_SUSTAINABILITY_ACTIONS = gql`
       actionType
       description
       impactScore
+      userId
       performedAt
       createdAt
       updatedAt
@@ -15,8 +16,8 @@ export const GET_SUSTAINABILITY_ACTIONS = gql`
 `;
 
 export const GET_SUSTAINABILITY_METRICS = gql`
-  query GetSustainabilityMetrics {
-    sustainabilityMetrics {
+  query GetSustainabilityMetrics($userId: String) {
+    sustainabilityMetrics(userId: $userId) {
       totalActions
       totalImpact
       averageImpact
