@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   Calendar, BarChart2, Bookmark, Leaf, Layout, 
   CheckSquare, BookOpen, Home, Sprout, LogIn, 
-  UserPlus, LogOut
+  UserPlus, LogOut, CalendarDays
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -19,6 +19,7 @@ const Sidebar: React.FC = () => {
     ];
 
     const authenticatedItems = [
+      { label: 'My Calendar', icon: <CalendarDays size={20} />, path: '/calendar' },
       { label: 'Add Session Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
       { label: 'Track Sustainability Actions', icon: <Leaf size={20} />, path: '/sustainability' },
       { label: 'Manage User Profile', icon: <Layout size={20} />, path: '/profile' },
@@ -110,7 +111,7 @@ const Sidebar: React.FC = () => {
         >
           <div className="flex-shrink-0 mr-3">
             <img 
-              src={user.profilePicture || 'https://media.istockphoto.com/id/1298261537/vector/blank-man-profile-head-icon-placeholder.jpg?s=612x612&w=0&k=20&c=CeT1RVWZzQDay4t54ookMaFsdi7ZHVFg2Y5v7hxigCA='} 
+              src={user.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
               alt="Profile" 
               className="w-10 h-10 rounded-full object-cover"
             />

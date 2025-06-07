@@ -6,6 +6,7 @@ import LoginPage from '../pages/LoginPage';
 import RegistrationPage from '../pages/RegistrationPage';
 import SessionsPage from '../pages/SessionsPage';
 import BookmarksPage from '../pages/BookmarksPage';
+import CalendarPage from '../pages/CalendarPage';
 import ProfilePage from '../pages/ProfilePage';
 import CheckInPage from '../pages/CheckInPage';
 import BingoPage from '../pages/BingoPage';
@@ -49,6 +50,14 @@ export const router = createBrowserRouter([
       {
         path: 'sessions',
         element: <SessionsPage />,
+      },
+      {
+        path: 'calendar',
+        element: (
+          <ProtectedRoute>
+            <CalendarPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'bookmarks',

@@ -2,7 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   Calendar, Users, Badge, Award, ArrowRight, LogIn, BarChart2,
-  BookOpen, Leaf, UserPlus, User, Bookmark, CheckSquare, Layout
+  BookOpen, Leaf, UserPlus, User, Bookmark, CheckSquare, Layout,
+  CalendarDays
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Card, { CardContent } from '../components/ui/Card';
@@ -45,48 +46,57 @@ const HomePage: React.FC = () => {
       description: "See who's making the biggest impact",
       link: "/leaderboard"
     },
-    {
-      icon: <UserPlus className="w-8 h-8 text-primary-600" />,
-      title: "Attendee Portal Sign Up",
-      description: "Create your conference account",
-      link: "/signup"
-    },
-    {
-      icon: <User className="w-8 h-8 text-primary-600" />,
-      title: "Attendee Portal Sign In",
-      description: "Access your conference profile",
-      link: "/login"
-    },
-    {
-      icon: <Bookmark className="w-8 h-8 text-primary-600" />,
-      title: "Add Session Bookmarks",
-      description: "Save sessions for later",
-      link: "/bookmarks"
-    },
-    {
-      icon: <Leaf className="w-8 h-8 text-primary-600" />,
-      title: "Track Sustainability Actions",
-      description: "Log your eco-friendly activities",
-      link: "/sustainability"
-    },
-    {
-      icon: <Layout className="w-8 h-8 text-primary-600" />,
-      title: "Manage User Profile",
-      description: "Update your preferences",
-      link: "/profile"
-    },
-    {
-      icon: <CheckSquare className="w-8 h-8 text-primary-600" />,
-      title: "Session Check-In",
-      description: "Mark your attendance",
-      link: "/check-in"
-    },
-    {
-      icon: <BookOpen className="w-8 h-8 text-primary-600" />,
-      title: "Event Bingo Card",
-      description: "Complete activities for points",
-      link: "/bingo"
-    }
+    ...(isAuthenticated ? [
+      {
+        icon: <CalendarDays className="w-8 h-8 text-primary-600" />,
+        title: "My Calendar",
+        description: "View your personalized agenda",
+        link: "/calendar"
+      },
+      {
+        icon: <Bookmark className="w-8 h-8 text-primary-600" />,
+        title: "Add Session Bookmarks",
+        description: "Save sessions for later",
+        link: "/bookmarks"
+      },
+      {
+        icon: <Leaf className="w-8 h-8 text-primary-600" />,
+        title: "Track Sustainability Actions",
+        description: "Log your eco-friendly activities",
+        link: "/sustainability"
+      },
+      {
+        icon: <Layout className="w-8 h-8 text-primary-600" />,
+        title: "Manage User Profile",
+        description: "Update your preferences",
+        link: "/profile"
+      },
+      {
+        icon: <CheckSquare className="w-8 h-8 text-primary-600" />,
+        title: "Session Check-In",
+        description: "Mark your attendance",
+        link: "/check-in"
+      },
+      {
+        icon: <BookOpen className="w-8 h-8 text-primary-600" />,
+        title: "Event Bingo Card",
+        description: "Complete activities for points",
+        link: "/bingo"
+      }
+    ] : [
+      {
+        icon: <UserPlus className="w-8 h-8 text-primary-600" />,
+        title: "Attendee Portal Sign Up",
+        description: "Create your conference account",
+        link: "/signup"
+      },
+      {
+        icon: <User className="w-8 h-8 text-primary-600" />,
+        title: "Attendee Portal Sign In",
+        description: "Access your conference profile",
+        link: "/login"
+      }
+    ])
   ];
 
   return (
@@ -184,7 +194,7 @@ const HomePage: React.FC = () => {
         >
           <div className="flex items-center space-x-4 mb-4">
             <img 
-              src={user.profilePicture || 'https://media.istockphoto.com/id/1298261537/vector/blank-man-profile-head-icon-placeholder.jpg?s=612x612&w=0&k=20&c=CeT1RVWZzQDay4t54ookMaFsdi7ZHVFg2Y5v7hxigCA='} 
+              src={user.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
               alt={user.fullName} 
               className="w-12 h-12 rounded-full object-cover border-2 border-primary-100"
             />

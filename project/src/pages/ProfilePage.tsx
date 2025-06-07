@@ -104,7 +104,7 @@ const ProfilePage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-end -mt-16 mb-6">
             <div className="relative">
               <img 
-                src={user?.profilePicture || 'https://media.istockphoto.com/id/1298261537/vector/blank-man-profile-head-icon-placeholder.jpg?s=612x612&w=0&k=20&c=CeT1RVWZzQDay4t54ookMaFsdi7ZHVFg2Y5v7hxigCA='} 
+                src={user?.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
                 alt={user?.fullName} 
                 className="w-32 h-32 rounded-xl border-4 border-white shadow-md object-cover"
               />
