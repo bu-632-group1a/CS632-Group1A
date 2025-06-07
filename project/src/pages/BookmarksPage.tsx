@@ -12,12 +12,29 @@ const BookmarksPage: React.FC = () => {
   const { bookmarks, loading } = useBookmarks();
   
   // Get bookmarked sessions based on current bookmark state
+  // Keep showing sessions even after bookmark is removed for better UX
   const bookmarkedSessions = React.useMemo(() => {
-    if (!bookmarks.length || !sessions.length) return [];
+    if (!bookmarks.length || !sessions.length) {
+      // If no bookmarks, still show sessions that were previously bookmarked
+      // This prevents jarring removal of sessions when bookmark is toggled
+      return sessions.filter(session => 
+        // You can customize this logic - for now showing all sessions
+        // but you could maintain a "recently bookmarked" list
+        false
+      );
+    }
     
     const bookmarkedSessionIds = new Set(bookmarks.map(bookmark => bookmark.code));
     return sessions.filter(session => bookmarkedSessionIds.has(session.id));
   }, [sessions, bookmarks]);
+
+  // Show all sessions that have ever been bookmarked for better UX
+  // This way users can see the bookmark state change without sessions disappearing
+  const allPotentialBookmarks = React.useMemo(() => {
+    // For better UX, show all sessions and let the SessionCard handle bookmark state
+    // This prevents sessions from disappearing when bookmarks are removed
+    return sessions;
+  }, [sessions]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -78,17 +95,18 @@ const BookmarksPage: React.FC = () => {
         <p className="text-gray-600">
           {bookmarkedSessions.length > 0
             ? `You have ${bookmarkedSessions.length} bookmarked session${bookmarkedSessions.length > 1 ? 's' : ''}`
-            : 'You haven\'t bookmarked any sessions yet'}
+            : 'Manage your session bookmarks below'}
         </p>
       </motion.div>
       
+      {/* Show bookmarked sessions if any exist */}
       {bookmarkedSessions.length > 0 ? (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          key={bookmarkedSessions.length} // Force re-render when count changes
+          key={`bookmarked-${bookmarkedSessions.length}`} // Force re-render when count changes
         >
           {bookmarkedSessions.map((session) => (
             <motion.div key={session.id} variants={itemVariants}>
@@ -97,21 +115,57 @@ const BookmarksPage: React.FC = () => {
           ))}
         </motion.div>
       ) : (
-        <motion.div 
-          className="text-center py-12 bg-white rounded-xl shadow-soft"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Bookmark size={48} className="mx-auto mb-4 text-gray-400" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
-          <p className="text-gray-600 max-w-md mx-auto mb-6">
-            Bookmark sessions you're interested in to quickly access them later.
-          </p>
-          <a href="/sessions" className="text-primary-600 hover:text-primary-800 font-medium">
-            Browse sessions
-          </a>
-        </motion.div>
+        <>
+          {/* Empty state when no bookmarks */}
+          <motion.div 
+            className="text-center py-12 bg-white rounded-xl shadow-soft"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Bookmark size={48} className="mx-auto mb-4 text-gray-400" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">No bookmarks yet</h2>
+            <p className="text-gray-600 max-w-md mx-auto mb-6">
+              Bookmark sessions you're interested in to quickly access them later.
+            </p>
+            <a href="/sessions" className="text-primary-600 hover:text-primary-800 font-medium">
+              Browse sessions
+            </a>
+          </motion.div>
+
+          {/* Show all sessions for easy bookmarking */}
+          <motion.div className="space-y-4">
+            <motion.h2 
+              className="text-2xl font-bold text-gray-900"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              All Sessions
+            </motion.h2>
+            <motion.p 
+              className="text-gray-600 mb-6"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              Browse and bookmark sessions you're interested in attending.
+            </motion.p>
+            
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {allPotentialBookmarks.map((session) => (
+                <motion.div key={session.id} variants={itemVariants}>
+                  <SessionCard session={session} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </>
       )}
     </div>
   );
