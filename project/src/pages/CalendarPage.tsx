@@ -16,12 +16,18 @@ const CalendarPage: React.FC = () => {
   const { bookmarks, loading, error } = useBookmarks();
   const [selectedDay, setSelectedDay] = useState<string>('all');
 
+  // Memoize expensive calculations
   const bookmarkedSessions = useMemo(() => {
-    const bookmarkedSessionIds = bookmarks.map(bookmark => bookmark.code);
-    return sessions.filter(session => bookmarkedSessionIds.includes(session.id));
+    if (!bookmarks.length || !sessions.length) return [];
+    
+    // Create a Set for O(1) lookup instead of O(n) includes
+    const bookmarkedSessionIds = new Set(bookmarks.map(bookmark => bookmark.code));
+    return sessions.filter(session => bookmarkedSessionIds.has(session.id));
   }, [sessions, bookmarks]);
 
   const sessionsByDay = useMemo(() => {
+    if (!bookmarkedSessions.length) return {};
+    
     const grouped = bookmarkedSessions.reduce((acc, session) => {
       if (!acc[session.date]) {
         acc[session.date] = [];
@@ -30,37 +36,72 @@ const CalendarPage: React.FC = () => {
       return acc;
     }, {} as Record<string, typeof bookmarkedSessions>);
 
-    // Sort sessions within each day by time
+    // Sort sessions within each day by time - optimize with single sort
     Object.keys(grouped).forEach(date => {
       grouped[date].sort((a, b) => {
-        const timeA = a.time.split(' - ')[0];
-        const timeB = b.time.split(' - ')[0];
-        return timeA.localeCompare(timeB);
+        // Extract time for comparison - cache the extraction
+        const getTimeValue = (timeStr: string) => {
+          const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (!match) return 0;
+          
+          const [, hours, minutes, period] = match;
+          let hour24 = parseInt(hours, 10);
+          
+          if (period.toUpperCase() === 'PM' && hour24 !== 12) {
+            hour24 += 12;
+          } else if (period.toUpperCase() === 'AM' && hour24 === 12) {
+            hour24 = 0;
+          }
+          
+          return hour24 * 60 + parseInt(minutes, 10);
+        };
+        
+        return getTimeValue(a.time) - getTimeValue(b.time);
       });
     });
 
     return grouped;
   }, [bookmarkedSessions]);
 
+  // Memoize conflict detection with optimized algorithm
   const conflicts = useMemo(() => {
+    if (!bookmarkedSessions.length) return new Map();
+    
     const conflictMap = new Map<string, string[]>();
     
-    bookmarkedSessions.forEach(session => {
-      const otherSessions = bookmarkedSessions.filter(s => s.id !== session.id);
-      const validation = ScheduleValidator.validateScheduleConflict(session, otherSessions);
-      
-      if (validation.hasConflict) {
-        conflictMap.set(session.id, validation.conflictingSessions.map(s => s.id));
-      }
+    // Group sessions by date first to reduce comparisons
+    const sessionsByDate = bookmarkedSessions.reduce((acc, session) => {
+      if (!acc[session.date]) acc[session.date] = [];
+      acc[session.date].push(session);
+      return acc;
+    }, {} as Record<string, typeof bookmarkedSessions>);
+    
+    // Only check conflicts within the same date
+    Object.values(sessionsByDate).forEach(dateSessions => {
+      dateSessions.forEach(session => {
+        const otherSessions = dateSessions.filter(s => s.id !== session.id);
+        const validation = ScheduleValidator.validateScheduleConflict(session, otherSessions);
+        
+        if (validation.hasConflict) {
+          conflictMap.set(session.id, validation.conflictingSessions.map(s => s.id));
+        }
+      });
     });
     
     return conflictMap;
   }, [bookmarkedSessions]);
 
-  const availableDays = Object.keys(sessionsByDay).sort();
-  const filteredSessions = selectedDay === 'all' 
-    ? sessionsByDay 
-    : { [selectedDay]: sessionsByDay[selectedDay] || [] };
+  const availableDays = useMemo(() => 
+    Object.keys(sessionsByDay).sort(), 
+    [sessionsByDay]
+  );
+
+  const filteredSessions = useMemo(() => 
+    selectedDay === 'all' 
+      ? sessionsByDay 
+      : { [selectedDay]: sessionsByDay[selectedDay] || [] },
+    [selectedDay, sessionsByDay]
+  );
 
   if (!isAuthenticated) {
     return (

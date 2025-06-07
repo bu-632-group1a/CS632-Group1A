@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, MapPin, User, Bookmark, BookmarkCheck, AlertTriangle } from 'lucide-react';
 import Card, { CardContent, CardFooter } from '../ui/Card';
@@ -14,7 +14,7 @@ interface SessionCardProps {
   session: Session;
 }
 
-const SessionCard: React.FC<SessionCardProps> = ({ session }) => {
+const SessionCard: React.FC<SessionCardProps> = memo(({ session }) => {
   const { sessions } = useApp();
   const { isAuthenticated } = useAuth();
   const { 
@@ -30,9 +30,13 @@ const SessionCard: React.FC<SessionCardProps> = ({ session }) => {
   const [conflictingSessions, setConflictingSessions] = useState<Session[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const bookmarked = isSessionBookmarked(session.id);
+  // Memoize bookmark status to avoid recalculation
+  const bookmarked = React.useMemo(() => 
+    isSessionBookmarked(session.id), 
+    [isSessionBookmarked, session.id]
+  );
 
-  const handleBookmarkToggle = async (e: React.MouseEvent) => {
+  const handleBookmarkToggle = React.useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (!isAuthenticated) {
@@ -71,9 +75,18 @@ const SessionCard: React.FC<SessionCardProps> = ({ session }) => {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [
+    isAuthenticated, 
+    bookmarked, 
+    session, 
+    getBookmarkBySessionId, 
+    deleteBookmark, 
+    bookmarks, 
+    sessions, 
+    createBookmark
+  ]);
 
-  const handleForceBookmark = async () => {
+  const handleForceBookmark = React.useCallback(async () => {
     setIsProcessing(true);
     try {
       await createBookmark(session);
@@ -83,9 +96,9 @@ const SessionCard: React.FC<SessionCardProps> = ({ session }) => {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [createBookmark, session]);
 
-  const getCategoryColor = (category: string): string => {
+  const getCategoryColor = React.useCallback((category: string): string => {
     const categories: Record<string, string> = {
       'Energy': 'primary',
       'Urban': 'secondary',
@@ -104,7 +117,7 @@ const SessionCard: React.FC<SessionCardProps> = ({ session }) => {
     };
     
     return categories[category] || 'default';
-  };
+  }, []);
 
   return (
     <>
@@ -114,6 +127,7 @@ const SessionCard: React.FC<SessionCardProps> = ({ session }) => {
             src={session.imageUrl || 'https://images.pexels.com/photos/957024/forest-trees-perspective-bright-957024.jpeg'} 
             alt={session.title} 
             className="w-full h-48 object-cover"
+            loading="lazy"
           />
           {isAuthenticated && (
             <motion.button
@@ -247,6 +261,8 @@ const SessionCard: React.FC<SessionCardProps> = ({ session }) => {
       </AnimatePresence>
     </>
   );
-};
+});
+
+SessionCard.displayName = 'SessionCard';
 
 export default SessionCard;
