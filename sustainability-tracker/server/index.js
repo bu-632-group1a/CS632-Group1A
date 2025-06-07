@@ -43,10 +43,29 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
+  const allowedOrigins = [
+    'https://cs-632-group1-a.vercel.app',
+    'http://localhost:5173', // for local dev
+    'http://localhost:4000', // for local dev
+    'https://studio.apollographql.com', // for local dev
+  ];
+
 app.use(cors({
-  origin: 'https://cs-632-group1-a.vercel.app', // your Vercel frontend URL
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
+
+// app.use(cors({
+//   origin: 'https://cs-632-group1-a.vercel.app', // your Vercel frontend URL
+//   credentials: true,
+// }));
 
   // Create GraphQL schema
   const schema = makeExecutableSchema({ 

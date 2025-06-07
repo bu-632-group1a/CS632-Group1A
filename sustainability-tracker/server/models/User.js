@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -46,10 +47,35 @@ const userSchema = new mongoose.Schema({
       message: 'Profile picture must be a valid URL'
     }
   },
+  city: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'City cannot exceed 100 characters'],
+  },
+  state: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'State cannot exceed 100 characters'],
+  },
+  company: {
+    type: String,
+    trim: true,
+    maxlength: [200, 'Company name cannot exceed 200 characters'],
+  },
   role: {
     type: String,
     enum: ['USER', 'ADMIN'],
     default: 'USER',
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: {
+    type: String,
+  },
+  emailVerificationExpires: {
+    type: Date,
   },
   refreshTokens: [{
     token: String,
@@ -62,6 +88,18 @@ const userSchema = new mongoose.Schema({
 // Virtual for full name
 userSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
+});
+
+// Virtual for location
+userSchema.virtual('location').get(function() {
+  if (this.city && this.state) {
+    return `${this.city}, ${this.state}`;
+  } else if (this.city) {
+    return this.city;
+  } else if (this.state) {
+    return this.state;
+  }
+  return null;
 });
 
 // Hash password before saving
@@ -80,6 +118,20 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Generate email verification token
+userSchema.methods.generateEmailVerificationToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.emailVerificationToken = crypto.createHash('sha256').update(token).digest('hex');
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+  return token;
+};
+
+// Verify email verification token
+userSchema.methods.verifyEmailToken = function(token) {
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  return this.emailVerificationToken === hashedToken && this.emailVerificationExpires > Date.now();
 };
 
 // Add refresh token to user

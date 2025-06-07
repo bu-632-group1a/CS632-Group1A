@@ -48,6 +48,30 @@ const registerSchema = Joi.object({
       'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
       'any.required': 'Password is required',
     }),
+
+  city: Joi.string()
+    .max(100)
+    .optional()
+    .allow('')
+    .messages({
+      'string.max': 'City cannot exceed 100 characters',
+    }),
+
+  state: Joi.string()
+    .max(100)
+    .optional()
+    .allow('')
+    .messages({
+      'string.max': 'State cannot exceed 100 characters',
+    }),
+
+  company: Joi.string()
+    .max(200)
+    .optional()
+    .allow('')
+    .messages({
+      'string.max': 'Company name cannot exceed 200 characters',
+    }),
 });
 
 const loginSchema = Joi.object({
@@ -76,6 +100,58 @@ const profilePictureSchema = Joi.object({
     }),
 });
 
+const updateUserProfileSchema = Joi.object({
+  firstName: Joi.string()
+    .min(2)
+    .max(50)
+    .optional()
+    .messages({
+      'string.min': 'First name must be at least 2 characters long',
+      'string.max': 'First name cannot exceed 50 characters',
+    }),
+
+  lastName: Joi.string()
+    .min(2)
+    .max(50)
+    .optional()
+    .messages({
+      'string.min': 'Last name must be at least 2 characters long',
+      'string.max': 'Last name cannot exceed 50 characters',
+    }),
+
+  city: Joi.string()
+    .max(100)
+    .optional()
+    .allow('')
+    .messages({
+      'string.max': 'City cannot exceed 100 characters',
+    }),
+
+  state: Joi.string()
+    .max(100)
+    .optional()
+    .allow('')
+    .messages({
+      'string.max': 'State cannot exceed 100 characters',
+    }),
+
+  company: Joi.string()
+    .max(200)
+    .optional()
+    .allow('')
+    .messages({
+      'string.max': 'Company name cannot exceed 200 characters',
+    }),
+
+  profilePicture: Joi.string()
+    .uri()
+    .optional()
+    .allow('')
+    .messages({
+      'string.uri': 'Profile picture must be a valid URL',
+    }),
+});
+
 export const validateRegister = (input) => {
   return registerSchema.validate(input, { abortEarly: false });
 };
@@ -86,4 +162,8 @@ export const validateLogin = (input) => {
 
 export const validateProfilePicture = (input) => {
   return profilePictureSchema.validate(input, { abortEarly: false });
+};
+
+export const validateUpdateUserProfile = (input) => {
+  return updateUserProfileSchema.validate(input, { abortEarly: false });
 };

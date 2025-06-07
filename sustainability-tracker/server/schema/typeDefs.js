@@ -9,7 +9,12 @@ export const typeDefs = gql`
     username: String!
     email: String!
     profilePicture: String
+    city: String
+    state: String
+    company: String
+    location: String
     role: UserRole!
+    isEmailVerified: Boolean!
     createdAt: String!
     updatedAt: String!
   }
@@ -25,6 +30,9 @@ export const typeDefs = gql`
     username: String!
     email: String!
     password: String!
+    city: String
+    state: String
+    company: String
   }
 
   input LoginInput {
@@ -34,6 +42,15 @@ export const typeDefs = gql`
 
   input UpdateProfileInput {
     profilePicture: String!
+  }
+
+  input UpdateUserProfileInput {
+    firstName: String
+    lastName: String
+    city: String
+    state: String
+    company: String
+    profilePicture: String
   }
 
   type AuthPayload {
@@ -139,6 +156,8 @@ export const typeDefs = gql`
     refreshToken(refreshToken: String!): TokenPayload!
     logout(refreshToken: String!): Boolean!
     updateProfilePicture(input: UpdateProfileInput!): User!
+    updateUserProfile(input: UpdateUserProfileInput!): User!
+    verifyEmail(token: String!): Boolean!
     createSustainabilityAction(input: CreateSustainabilityActionInput!): SustainabilityAction!
     updateSustainabilityAction(id: ID!, input: UpdateSustainabilityActionInput!): SustainabilityAction!
     deleteSustainabilityAction(id: ID!): Boolean!

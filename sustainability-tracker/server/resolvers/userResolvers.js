@@ -1,8 +1,9 @@
 import { GraphQLError } from 'graphql';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
-import { validateRegister, validateLogin, validateProfilePicture } from '../validators/userValidators.js';
+import { validateRegister, validateLogin, validateProfilePicture, validateUpdateUserProfile } from '../validators/userValidators.js';
 import { generateTokens, verifyRefreshToken, getAuthUser } from '../utils/auth.js';
+import { sendVerificationEmail } from '../utils/email.js';
 
 const userResolvers = {
   Query: {
@@ -40,7 +41,7 @@ const userResolvers = {
         });
       }
 
-      const { firstName, lastName, username, email, password } = input;
+      const { firstName, lastName, username, email, password, city, state, company } = input;
 
       // Check if user already exists
       const existingUser = await User.findOne({
@@ -60,10 +61,24 @@ const userResolvers = {
         username,
         email,
         password,
+        city: city || undefined,
+        state: state || undefined,
+        company: company || undefined,
         role: 'USER',
       });
 
+      // Generate email verification token
+      const verificationToken = user.generateEmailVerificationToken();
       const savedUser = await user.save();
+
+      // Send verification email
+      try {
+        await sendVerificationEmail(savedUser.email, verificationToken);
+        console.log(`Verification email sent to ${savedUser.email}`);
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't fail registration if email sending fails
+      }
 
       // Generate tokens
       const { accessToken, refreshToken } = generateTokens(savedUser);
@@ -140,6 +155,62 @@ const userResolvers = {
       return user;
     },
 
+    updateUserProfile: async (_, { input }, context) => {
+      const authUser = getAuthUser(context);
+      
+      const { error } = validateUpdateUserProfile(input);
+      if (error) {
+        throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const user = await User.findById(authUser.userId);
+      if (!user) {
+        throw new GraphQLError('User not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Update only provided fields
+      if (input.firstName !== undefined) user.firstName = input.firstName;
+      if (input.lastName !== undefined) user.lastName = input.lastName;
+      if (input.city !== undefined) user.city = input.city || undefined;
+      if (input.state !== undefined) user.state = input.state || undefined;
+      if (input.company !== undefined) user.company = input.company || undefined;
+      if (input.profilePicture !== undefined) user.profilePicture = input.profilePicture || undefined;
+
+      await user.save();
+
+      return user;
+    },
+
+    verifyEmail: async (_, { token }) => {
+      const user = await User.findOne({
+        emailVerificationExpires: { $gt: Date.now() },
+      });
+
+      if (!user) {
+        throw new GraphQLError('Invalid or expired verification token', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const isValidToken = user.verifyEmailToken(token);
+      if (!isValidToken) {
+        throw new GraphQLError('Invalid verification token', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      user.isEmailVerified = true;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+      await user.save();
+
+      return true;
+    },
+
     refreshToken: async (_, { refreshToken }) => {
       try {
         const decoded = verifyRefreshToken(refreshToken);
@@ -195,6 +266,16 @@ const userResolvers = {
   User: {
     id: (parent) => parent._id || parent.id,
     fullName: (parent) => `${parent.firstName} ${parent.lastName}`,
+    location: (parent) => {
+      if (parent.city && parent.state) {
+        return `${parent.city}, ${parent.state}`;
+      } else if (parent.city) {
+        return parent.city;
+      } else if (parent.state) {
+        return parent.state;
+      }
+      return null;
+    },
   },
 };
 
