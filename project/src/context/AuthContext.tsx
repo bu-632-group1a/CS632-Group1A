@@ -108,6 +108,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Force logout without calling backend (for when tokens are expired)
+  const forceLogout = async () => {
+    console.log('🚨 Force logout initiated due to token expiry');
+    stopTokenRefreshTimer();
+    localStorage.removeItem(STORAGE_KEY);
+    setAuthState({ accessToken: null, refreshToken: null, user: null, tokenExpiry: null });
+    
+    // Show user notification about automatic logout
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      console.log('🔄 Redirecting to login page due to expired session');
+      // You could also show a toast notification here
+      window.location.href = '/login';
+    }
+  };
+
   // Refresh access token using refresh token
   const refreshAccessToken = async (): Promise<boolean> => {
     if (!authState.refreshToken) {
@@ -195,21 +210,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Force logout without calling backend (for when tokens are expired)
-  const forceLogout = async () => {
-    console.log('🚨 Force logout initiated due to token expiry');
-    stopTokenRefreshTimer();
-    localStorage.removeItem(STORAGE_KEY);
-    setAuthState({ accessToken: null, refreshToken: null, user: null, tokenExpiry: null });
-    
-    // Show user notification about automatic logout
-    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-      console.log('🔄 Redirecting to login page due to expired session');
-      // You could also show a toast notification here
-      window.location.href = '/login';
-    }
-  };
-
   // Check if token needs refresh
   const shouldRefreshToken = (): boolean => {
     if (!authState.tokenExpiry || !authState.accessToken) {
@@ -286,30 +286,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => stopTokenRefreshTimer();
   }, [authState.accessToken, authState.refreshToken]);
 
-  // Initial token validation on app load
+  // Initial token validation on app load - IMMEDIATE CHECK
   useEffect(() => {
-    if (authState.accessToken && authState.tokenExpiry) {
-      const now = Date.now();
-      const timeUntilExpiry = authState.tokenExpiry - now;
-      
-      console.log(`🔄 App loaded with existing token`);
-      console.log(`🕒 Token expires at: ${new Date(authState.tokenExpiry).toLocaleString()}`);
-      console.log(`⏰ Time until expiry: ${Math.floor(timeUntilExpiry / (1000 * 60))} minutes`);
+    const checkTokenOnLoad = async () => {
+      if (authState.accessToken && authState.tokenExpiry) {
+        const now = Date.now();
+        const timeUntilExpiry = authState.tokenExpiry - now;
+        
+        console.log(`🔄 App loaded with existing token`);
+        console.log(`🕒 Token expires at: ${new Date(authState.tokenExpiry).toLocaleString()}`);
+        console.log(`⏰ Time until expiry: ${Math.floor(timeUntilExpiry / (1000 * 60))} minutes`);
 
-      if (isTokenExpired()) {
-        console.log('🚨 Token already expired on app load, attempting refresh...');
-        refreshAccessToken().then(success => {
-          if (!success) {
-            console.log('🚨 Failed to refresh expired token on app load - signing out user');
-            forceLogout();
+        // IMMEDIATE CHECK - if token is already expired, sign out immediately
+        if (isTokenExpired()) {
+          console.log('🚨 Token already expired on app load - signing out immediately');
+          await forceLogout();
+          return;
+        }
+
+        // If token expires soon, try to refresh
+        if (shouldRefreshToken()) {
+          console.log('🔄 Token expires soon, refreshing proactively...');
+          const refreshSuccess = await refreshAccessToken();
+          if (!refreshSuccess) {
+            console.log('🚨 Failed to refresh token on app load - signing out user');
+            await forceLogout();
           }
-        });
-      } else if (shouldRefreshToken()) {
-        console.log('🔄 Token expires soon, refreshing proactively...');
-        refreshAccessToken();
+        }
       }
-    }
-  }, []);
+    };
+
+    checkTokenOnLoad();
+  }, []); // Only run once on mount
 
   const login = async (email: string, password: string) => {
     try {
@@ -361,23 +369,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
+      console.log('🔄 Logout initiated by user');
+      
+      // Always clear local state first to ensure UI updates immediately
+      stopTokenRefreshTimer();
+      localStorage.removeItem(STORAGE_KEY);
+      setAuthState({ accessToken: null, refreshToken: null, user: null, tokenExpiry: null });
+      
+      // Try to call backend logout, but don't block if it fails
       if (authState.refreshToken) {
-        await logoutMutation({
-          variables: { refreshToken: authState.refreshToken }
-        });
+        try {
+          await logoutMutation({
+            variables: { refreshToken: authState.refreshToken }
+          });
+          console.log('✅ Backend logout successful');
+        } catch (error) {
+          console.warn('⚠️ Backend logout failed, but local logout completed:', error);
+        }
       }
       
-      stopTokenRefreshTimer();
-      localStorage.removeItem(STORAGE_KEY);
-      setAuthState({ accessToken: null, refreshToken: null, user: null, tokenExpiry: null });
-      
-      console.log('✅ Logout successful');
+      console.log('✅ Logout completed');
     } catch (error) {
       console.error('❌ Logout error:', error);
-      // Still clear local state even if logout request fails
-      stopTokenRefreshTimer();
-      localStorage.removeItem(STORAGE_KEY);
-      setAuthState({ accessToken: null, refreshToken: null, user: null, tokenExpiry: null });
+      // Local state is already cleared above, so logout is still effective
     }
   };
 
@@ -385,7 +399,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <AuthContext.Provider 
       value={{ 
         user: authState.user,
-        isAuthenticated: !!authState.user,
+        isAuthenticated: !!authState.user && !!authState.accessToken && !isTokenExpired(),
         login,
         register,
         logout,
