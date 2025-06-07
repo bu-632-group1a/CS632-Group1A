@@ -3,6 +3,14 @@ import { BookmarkService } from '../../services/bookmarkService';
 // Mock fetch globally
 global.fetch = jest.fn();
 
+// Mock import.meta.env
+Object.defineProperty(import.meta, 'env', {
+  value: {
+    DEV: false, // Test as production environment
+  },
+  writable: true,
+});
+
 describe('BookmarkService', () => {
   beforeEach(() => {
     (fetch as jest.Mock).mockClear();

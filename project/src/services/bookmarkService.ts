@@ -11,7 +11,10 @@ interface BookmarkResponse {
   userId: string;
 }
 
-const API_BASE_URL = '/api';
+// Use proxy in development, direct URL in production
+const API_BASE_URL = import.meta.env.DEV 
+  ? '/api' 
+  : 'https://cs632-session-manager.onrender.com/api';
 
 export class BookmarkService {
   private static async makeRequest<T>(
