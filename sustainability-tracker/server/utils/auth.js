@@ -1,9 +1,12 @@
 import jwt from 'jsonwebtoken';
 import { GraphQLError } from 'graphql';
+import dotenv from 'dotenv';
+dotenv.config(); // Load environment variables before any usage
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
-
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+console.log('JWT_SECRET:', JWT_SECRET);
+console.log('JWT_REFRESH_SECRET:', JWT_REFRESH_SECRET);
 export const generateTokens = (user) => {
   const accessToken = jwt.sign(
     { 
