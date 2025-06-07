@@ -12,11 +12,78 @@ const GRAPHQL_WS_URL = import.meta.env.DEV
   ? `ws://${window.location.host}/graphql`
   : 'wss://cs632-group1a.onrender.com/graphql';
 
-// Add auth link to inject authorization header
-const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('auth_state') 
-    ? JSON.parse(localStorage.getItem('auth_state')!).accessToken 
+// Add auth link to inject authorization header with automatic token refresh
+const authLink = setContext(async (_, { headers }) => {
+  const authState = localStorage.getItem('auth_state') 
+    ? JSON.parse(localStorage.getItem('auth_state')!) 
     : null;
+  
+  let token = authState?.accessToken;
+  
+  // Check if token needs refresh before making request
+  if (authState?.accessToken && authState?.tokenExpiry) {
+    const now = Date.now();
+    const timeUntilExpiry = authState.tokenExpiry - now;
+    const refreshThreshold = 5 * 60 * 1000; // 5 minutes
+    
+    if (timeUntilExpiry <= refreshThreshold && authState.refreshToken) {
+      console.log('🔄 Token expires soon, refreshing before GraphQL request...');
+      
+      try {
+        const response = await fetch(GRAPHQL_HTTP_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `
+              mutation RefreshToken($refreshToken: String!) {
+                refreshToken(refreshToken: $refreshToken) {
+                  accessToken
+                  refreshToken
+                  user {
+                    id
+                    firstName
+                    lastName
+                    fullName
+                    email
+                    profilePicture
+                    role
+                    createdAt
+                    updatedAt
+                  }
+                }
+              }
+            `,
+            variables: {
+              refreshToken: authState.refreshToken
+            }
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.data?.refreshToken) {
+          const { accessToken, refreshToken, user } = data.data.refreshToken;
+          const tokenExpiry = JSON.parse(atob(accessToken.split('.')[1])).exp * 1000;
+          
+          const newAuthState = {
+            accessToken,
+            refreshToken,
+            user,
+            tokenExpiry
+          };
+
+          localStorage.setItem('auth_state', JSON.stringify(newAuthState));
+          token = accessToken;
+          
+          console.log('✅ Token refreshed successfully before GraphQL request');
+        }
+      } catch (error) {
+        console.error('❌ Failed to refresh token before GraphQL request:', error);
+      }
+    }
+  }
   
   return {
     headers: {
@@ -39,10 +106,10 @@ const httpLink = new HttpLink({
 const wsLink = new GraphQLWsLink(createClient({
   url: GRAPHQL_WS_URL,
   connectionParams: () => {
-    const token = localStorage.getItem('auth_state') 
-      ? JSON.parse(localStorage.getItem('auth_state')!).accessToken 
+    const authState = localStorage.getItem('auth_state') 
+      ? JSON.parse(localStorage.getItem('auth_state')!) 
       : null;
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return authState?.accessToken ? { Authorization: `Bearer ${authState.accessToken}` } : {};
   },
   retryAttempts: 5,
   shouldRetry: (error) => {
@@ -78,6 +145,12 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       console.error(
         `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}, Operation: ${operation.operationName}`
       );
+      
+      // Handle token expiry errors
+      if (message.includes('token') && message.includes('expired')) {
+        console.log('🔄 Token expired during GraphQL operation, triggering refresh...');
+        // The auth context will handle the refresh on the next request
+      }
     });
   }
   

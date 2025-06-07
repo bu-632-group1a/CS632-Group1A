@@ -53,6 +53,26 @@ export const REGISTER = gql`
   }
 `;
 
+export const REFRESH_TOKEN = gql`
+  mutation RefreshToken($refreshToken: String!) {
+    refreshToken(refreshToken: $refreshToken) {
+      accessToken
+      refreshToken
+      user {
+        id
+        firstName
+        lastName
+        fullName
+        email
+        profilePicture
+        role
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
 export const UPDATE_PROFILE_PICTURE = gql`
   mutation UpdateProfilePicture($input: UpdateProfileInput!) {
     updateProfilePicture(input: $input) {
