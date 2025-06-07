@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, MapPin, User, Bookmark, BookmarkCheck, AlertTriangle } from 'lucide-react';
 import Card, { CardContent, CardFooter } from '../ui/Card';
@@ -31,12 +31,12 @@ const SessionCard: React.FC<SessionCardProps> = memo(({ session }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Memoize bookmark status to avoid recalculation
-  const bookmarked = React.useMemo(() => 
+  const bookmarked = useMemo(() => 
     isSessionBookmarked(session.id), 
     [isSessionBookmarked, session.id]
   );
 
-  const handleBookmarkToggle = React.useCallback(async (e: React.MouseEvent) => {
+  const handleBookmarkToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (!isAuthenticated) {
@@ -86,7 +86,7 @@ const SessionCard: React.FC<SessionCardProps> = memo(({ session }) => {
     createBookmark
   ]);
 
-  const handleForceBookmark = React.useCallback(async () => {
+  const handleForceBookmark = useCallback(async () => {
     setIsProcessing(true);
     try {
       await createBookmark(session);
@@ -98,7 +98,7 @@ const SessionCard: React.FC<SessionCardProps> = memo(({ session }) => {
     }
   }, [createBookmark, session]);
 
-  const getCategoryColor = React.useCallback((category: string): string => {
+  const getCategoryColor = useCallback((category: string): string => {
     const categories: Record<string, string> = {
       'Energy': 'primary',
       'Urban': 'secondary',
@@ -137,14 +137,39 @@ const SessionCard: React.FC<SessionCardProps> = memo(({ session }) => {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               aria-label={bookmarked ? "Remove bookmark" : "Add bookmark"}
+              key={`bookmark-${session.id}-${bookmarked}`} // Force re-render on state change
             >
-              {isProcessing ? (
-                <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-              ) : bookmarked ? (
-                <BookmarkCheck size={20} className="text-primary-600" />
-              ) : (
-                <Bookmark size={20} className="text-gray-500" />
-              )}
+              <AnimatePresence mode="wait">
+                {isProcessing ? (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"
+                  />
+                ) : bookmarked ? (
+                  <motion.div
+                    key="bookmarked"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <BookmarkCheck size={20} className="text-primary-600" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="not-bookmarked"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Bookmark size={20} className="text-gray-500" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.button>
           )}
           <div className="absolute bottom-0 left-0 w-full p-2 bg-gradient-to-t from-black/70 to-transparent">

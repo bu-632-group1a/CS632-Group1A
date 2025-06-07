@@ -4,14 +4,20 @@ import { Bookmark } from 'lucide-react';
 import SessionCard from '../components/sessions/SessionCard';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { useBookmarks } from '../hooks/useBookmarks';
 
 const BookmarksPage: React.FC = () => {
-  const { sessions, bookmarkedSessions } = useApp();
+  const { sessions } = useApp();
   const { isAuthenticated } = useAuth();
+  const { bookmarks, loading } = useBookmarks();
   
-  const bookmarkedSessionsData = sessions.filter(session => 
-    bookmarkedSessions.includes(session.id)
-  );
+  // Get bookmarked sessions based on current bookmark state
+  const bookmarkedSessions = React.useMemo(() => {
+    if (!bookmarks.length || !sessions.length) return [];
+    
+    const bookmarkedSessionIds = new Set(bookmarks.map(bookmark => bookmark.code));
+    return sessions.filter(session => bookmarkedSessionIds.has(session.id));
+  }, [sessions, bookmarks]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -45,6 +51,22 @@ const BookmarksPage: React.FC = () => {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Bookmarked Sessions</h1>
+          <p className="text-gray-600">Loading your bookmarks...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-xl shadow-soft h-96 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <motion.div
@@ -54,20 +76,21 @@ const BookmarksPage: React.FC = () => {
       >
         <h1 className="text-3xl font-bold text-gray-900 mb-1">Bookmarked Sessions</h1>
         <p className="text-gray-600">
-          {bookmarkedSessionsData.length > 0
-            ? `You have ${bookmarkedSessionsData.length} bookmarked session${bookmarkedSessionsData.length > 1 ? 's' : ''}`
+          {bookmarkedSessions.length > 0
+            ? `You have ${bookmarkedSessions.length} bookmarked session${bookmarkedSessions.length > 1 ? 's' : ''}`
             : 'You haven\'t bookmarked any sessions yet'}
         </p>
       </motion.div>
       
-      {bookmarkedSessionsData.length > 0 ? (
+      {bookmarkedSessions.length > 0 ? (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          key={bookmarkedSessions.length} // Force re-render when count changes
         >
-          {bookmarkedSessionsData.map((session) => (
+          {bookmarkedSessions.map((session) => (
             <motion.div key={session.id} variants={itemVariants}>
               <SessionCard session={session} />
             </motion.div>

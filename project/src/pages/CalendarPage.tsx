@@ -150,6 +150,7 @@ const CalendarPage: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      key={bookmarkedSessions.length} // Force re-render when bookmarks change
     >
       <motion.div 
         className="flex justify-between items-center"

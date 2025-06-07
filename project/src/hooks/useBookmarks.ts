@@ -10,22 +10,54 @@ interface BookmarkData {
   userId: string;
 }
 
+// Global state for real-time updates across components
+let globalBookmarks: BookmarkData[] = [];
+let globalListeners: Set<() => void> = new Set();
+
 // Cache for all bookmarks to avoid repeated API calls
 let bookmarksCache: BookmarkData[] | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Notify all components about bookmark changes
+const notifyListeners = () => {
+  globalListeners.forEach(listener => listener());
+};
+
+// Update global state and notify listeners
+const updateGlobalBookmarks = (newBookmarks: BookmarkData[]) => {
+  globalBookmarks = newBookmarks;
+  bookmarksCache = newBookmarks;
+  cacheTimestamp = Date.now();
+  notifyListeners();
+};
 
 export const useBookmarks = () => {
   const { user } = useAuth();
   const [bookmarks, setBookmarks] = useState<BookmarkData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Force re-render when global state changes
+  const triggerUpdate = useCallback(() => {
+    setForceUpdate(prev => prev + 1);
+  }, []);
+
+  // Subscribe to global bookmark changes
+  useEffect(() => {
+    globalListeners.add(triggerUpdate);
+    return () => {
+      globalListeners.delete(triggerUpdate);
+    };
+  }, [triggerUpdate]);
 
   // Memoized user bookmarks to avoid recalculation
   const userBookmarks = useMemo(() => {
-    if (!user || !bookmarksCache) return [];
-    return bookmarksCache.filter(bookmark => bookmark.userId === user.id);
-  }, [user, bookmarksCache]);
+    if (!user) return [];
+    const currentBookmarks = bookmarksCache || globalBookmarks;
+    return currentBookmarks.filter(bookmark => bookmark.userId === user.id);
+  }, [user, forceUpdate, bookmarksCache]);
 
   // Memoized lookup map for O(1) bookmark checks
   const bookmarkLookup = useMemo(() => {
@@ -54,8 +86,7 @@ export const useBookmarks = () => {
     try {
       // Fetch all bookmarks once and cache them
       const allBookmarks = await BookmarkService.getAllBookmarks();
-      bookmarksCache = allBookmarks;
-      cacheTimestamp = now;
+      updateGlobalBookmarks(allBookmarks);
       
       // Filter for current user
       const filteredBookmarks = allBookmarks.filter(bookmark => bookmark.userId === user.id);
@@ -80,11 +111,11 @@ export const useBookmarks = () => {
         userId: user.id,
       });
       
-      // Update cache immediately for instant UI feedback
-      if (bookmarksCache) {
-        bookmarksCache.push(newBookmark);
-      }
+      // Update global state immediately for instant UI feedback
+      const updatedBookmarks = [...(bookmarksCache || globalBookmarks), newBookmark];
+      updateGlobalBookmarks(updatedBookmarks);
       
+      // Update local state
       setBookmarks(prev => [...prev, newBookmark]);
       return newBookmark;
     } catch (err) {
@@ -103,11 +134,13 @@ export const useBookmarks = () => {
     try {
       await BookmarkService.deleteBookmark(bookmarkId);
       
-      // Update cache immediately for instant UI feedback
-      if (bookmarksCache) {
-        bookmarksCache = bookmarksCache.filter(bookmark => bookmark.id !== bookmarkId);
-      }
+      // Update global state immediately for instant UI feedback
+      const updatedBookmarks = (bookmarksCache || globalBookmarks).filter(
+        bookmark => bookmark.id !== bookmarkId
+      );
+      updateGlobalBookmarks(updatedBookmarks);
       
+      // Update local state
       setBookmarks(prev => prev.filter(bookmark => bookmark.id !== bookmarkId));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete bookmark';
@@ -133,6 +166,7 @@ export const useBookmarks = () => {
     if (!user) {
       bookmarksCache = null;
       cacheTimestamp = 0;
+      globalBookmarks = [];
       setBookmarks([]);
     }
   }, [user?.id]);
@@ -140,6 +174,11 @@ export const useBookmarks = () => {
   useEffect(() => {
     fetchBookmarks();
   }, [fetchBookmarks]);
+
+  // Update local bookmarks when global state changes
+  useEffect(() => {
+    setBookmarks(userBookmarks);
+  }, [userBookmarks]);
 
   return {
     bookmarks: userBookmarks,
@@ -157,4 +196,6 @@ export const useBookmarks = () => {
 export const clearBookmarksCache = () => {
   bookmarksCache = null;
   cacheTimestamp = 0;
+  globalBookmarks = [];
+  notifyListeners();
 };
