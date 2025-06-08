@@ -31,9 +31,9 @@ export const sendVerificationEmail = async (email, verificationToken) => {
     }
     
     const mailOptions = {
-      from: `"Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
+      from: `"EcoPulse - Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
       to: email,
-      subject: 'Verify Your Email Address',
+      subject: 'EcoPulse - Verify Your Email Address',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Email Verification</h2>
@@ -72,9 +72,9 @@ export const sendPasswordResetEmail = async (email, resetToken, firstName) => {
     }
     
     const mailOptions = {
-      from: `"Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
+      from: `"EcoPulse - Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
       to: email,
-      subject: 'Reset Your Password - Sustainability Tracker',
+      subject: 'EcoPulse - Reset Your Password - Sustainability Tracker',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -147,9 +147,9 @@ export const sendPasswordResetConfirmationEmail = async (email, firstName) => {
     }
     
     const mailOptions = {
-      from: `"Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
+      from: `"EcoPulse - Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
       to: email,
-      subject: 'Password Successfully Reset - Sustainability Tracker',
+      subject: 'EcoPulse - Password Successfully Reset - Sustainability Tracker',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
