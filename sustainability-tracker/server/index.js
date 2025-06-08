@@ -12,6 +12,7 @@ import cors from 'cors';
 import { typeDefs } from './schema/typeDefs.js';
 import resolvers from './resolvers/index.js';
 import userResolvers from './resolvers/userResolvers.js';
+import bingoResolvers from './resolvers/bingoResolvers.js';
 import { connectDB } from './config/db.js';
 import { verifyAccessToken } from './utils/auth.js';
 
@@ -25,14 +26,23 @@ const mergedResolvers = {
   Query: {
     ...resolvers.Query,
     ...userResolvers.Query,
+    ...bingoResolvers.Query,
   },
   Mutation: {
     ...resolvers.Mutation,
     ...userResolvers.Mutation,
+    ...bingoResolvers.Mutation,
   },
-  Subscription: resolvers.Subscription,
+  Subscription: {
+    ...resolvers.Subscription,
+    ...bingoResolvers.Subscription,
+  },
   SustainabilityAction: resolvers.SustainabilityAction,
   User: userResolvers.User,
+  BingoItem: bingoResolvers.BingoItem,
+  BingoGame: bingoResolvers.BingoGame,
+  BingoCompletedItem: bingoResolvers.BingoCompletedItem,
+  BingoAchievement: bingoResolvers.BingoAchievement,
 };
 
 async function startServer() {

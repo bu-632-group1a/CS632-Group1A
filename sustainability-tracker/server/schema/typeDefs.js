@@ -140,6 +140,106 @@ export const typeDefs = gql`
     recentActions: [SustainabilityAction!]
   }
 
+  # Bingo Types
+  type BingoItem {
+    id: ID!
+    text: String!
+    position: Int!
+    category: BingoCategory!
+    points: Int!
+    isActive: Boolean!
+    createdBy: String!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  enum BingoCategory {
+    TRANSPORT
+    ENERGY
+    WASTE
+    WATER
+    FOOD
+    COMMUNITY
+    DIGITAL
+    GENERAL
+  }
+
+  input CreateBingoItemInput {
+    text: String!
+    position: Int!
+    category: BingoCategory
+    points: Int
+    isActive: Boolean
+  }
+
+  input UpdateBingoItemInput {
+    text: String
+    position: Int
+    category: BingoCategory
+    points: Int
+    isActive: Boolean
+  }
+
+  type BingoCompletedItem {
+    item: BingoItem!
+    completedAt: String!
+  }
+
+  type BingoAchievement {
+    type: BingoType!
+    pattern: [Int!]!
+    achievedAt: String!
+    pointsAwarded: Int!
+  }
+
+  enum BingoType {
+    ROW
+    COLUMN
+    DIAGONAL
+  }
+
+  type BingoGame {
+    id: ID!
+    userId: String!
+    completedItems: [BingoCompletedItem!]!
+    bingosAchieved: [BingoAchievement!]!
+    totalPoints: Int!
+    isCompleted: Boolean!
+    gameStartedAt: String!
+    gameCompletedAt: String
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type BingoLeaderboardEntry {
+    userId: String!
+    totalPoints: Int!
+    completedItemsCount: Int!
+    bingosCount: Int!
+    rank: Int!
+    isCompleted: Boolean!
+    gameCompletedAt: String
+  }
+
+  type BingoStats {
+    totalGames: Int!
+    completedGames: Int!
+    totalBingos: Int!
+    averageCompletionRate: Float!
+  }
+
+  type BingoItemCompletedEvent {
+    userId: String!
+    itemId: ID!
+    item: BingoItem!
+  }
+
+  type BingoAchievedEvent {
+    userId: String!
+    bingo: BingoAchievement!
+    game: BingoGame!
+  }
+
   type Query {
     me: User!
     users: [User!]!
@@ -148,6 +248,12 @@ export const typeDefs = gql`
     sustainabilityMetrics(userId: String): SustainabilityMetrics!
     leaderboard(limit: Int): [LeaderboardEntry!]!
     allUserMetrics: [UserSustainabilityMetrics!]!
+    
+    # Bingo Queries
+    bingoItems: [BingoItem!]!
+    bingoGame: BingoGame!
+    bingoLeaderboard(limit: Int): [BingoLeaderboardEntry!]!
+    bingoStats: BingoStats!
   }
 
   type Mutation {
@@ -161,6 +267,12 @@ export const typeDefs = gql`
     createSustainabilityAction(input: CreateSustainabilityActionInput!): SustainabilityAction!
     updateSustainabilityAction(id: ID!, input: UpdateSustainabilityActionInput!): SustainabilityAction!
     deleteSustainabilityAction(id: ID!): Boolean!
+    
+    # Bingo Mutations
+    createBingoItem(input: CreateBingoItemInput!): BingoItem!
+    updateBingoItem(id: ID!, input: UpdateBingoItemInput!): BingoItem!
+    toggleBingoItem(itemId: ID!): BingoGame!
+    resetBingoGame: BingoGame!
   }
 
   type Subscription {
@@ -168,5 +280,10 @@ export const typeDefs = gql`
     sustainabilityActionUpdated: SustainabilityAction!
     sustainabilityActionDeleted: ID!
     leaderboardUpdated: [LeaderboardEntry!]!
+    
+    # Bingo Subscriptions
+    bingoItemCompleted: BingoItemCompletedEvent!
+    bingoAchieved: BingoAchievedEvent!
+    bingoGameUpdated: BingoGame!
   }
 `;

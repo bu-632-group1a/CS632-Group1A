@@ -1,0 +1,368 @@
+import { GraphQLError } from 'graphql';
+import { pubsub } from '../index.js';
+import BingoItem from '../models/BingoItem.js';
+import BingoGame from '../models/BingoGame.js';
+import { getAuthUser } from '../utils/auth.js';
+import { validateCreateBingoItem, validateUpdateBingoItem } from '../validators/bingoValidators.js';
+
+// Subscription event names
+const BINGO_EVENTS = {
+  BINGO_ITEM_COMPLETED: 'BINGO_ITEM_COMPLETED',
+  BINGO_ACHIEVED: 'BINGO_ACHIEVED',
+  BINGO_GAME_UPDATED: 'BINGO_GAME_UPDATED',
+};
+
+const bingoResolvers = {
+  Query: {
+    bingoItems: async () => {
+      try {
+        return await BingoItem.find({ isActive: true }).sort({ position: 1 });
+      } catch (error) {
+        throw new GraphQLError(`Failed to fetch bingo items: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    bingoGame: async (_, __, context) => {
+      const authUser = getAuthUser(context);
+      
+      try {
+        let game = await BingoGame.findOne({ userId: authUser.userId })
+          .populate('completedItems.itemId');
+        
+        if (!game) {
+          // Create a new game for the user
+          game = new BingoGame({
+            userId: authUser.userId,
+            completedItems: [],
+            bingosAchieved: [],
+            totalPoints: 0,
+          });
+          await game.save();
+          await game.populate('completedItems.itemId');
+        }
+        
+        return game;
+      } catch (error) {
+        throw new GraphQLError(`Failed to fetch bingo game: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    bingoLeaderboard: async (_, { limit = 10 }) => {
+      try {
+        const leaderboard = await BingoGame.aggregate([
+          {
+            $addFields: {
+              completedItemsCount: { $size: '$completedItems' },
+              bingosCount: { $size: '$bingosAchieved' },
+            },
+          },
+          {
+            $sort: { 
+              totalPoints: -1, 
+              bingosCount: -1, 
+              completedItemsCount: -1,
+              updatedAt: 1,
+            },
+          },
+          { $limit: limit },
+        ]);
+
+        return leaderboard.map((entry, index) => ({
+          ...entry,
+          rank: index + 1,
+        }));
+      } catch (error) {
+        throw new GraphQLError(`Failed to fetch bingo leaderboard: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    bingoStats: async () => {
+      try {
+        const totalGames = await BingoGame.countDocuments();
+        const completedGames = await BingoGame.countDocuments({ isCompleted: true });
+        const totalBingos = await BingoGame.aggregate([
+          { $unwind: '$bingosAchieved' },
+          { $count: 'total' },
+        ]);
+        
+        const avgCompletionRate = await BingoGame.aggregate([
+          {
+            $addFields: {
+              completionRate: {
+                $multiply: [
+                  { $divide: [{ $size: '$completedItems' }, 16] },
+                  100,
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              avgCompletionRate: { $avg: '$completionRate' },
+            },
+          },
+        ]);
+
+        return {
+          totalGames,
+          completedGames,
+          totalBingos: totalBingos[0]?.total || 0,
+          averageCompletionRate: avgCompletionRate[0]?.avgCompletionRate || 0,
+        };
+      } catch (error) {
+        throw new GraphQLError(`Failed to fetch bingo stats: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+  },
+
+  Mutation: {
+    createBingoItem: async (_, { input }, context) => {
+      const authUser = getAuthUser(context);
+      
+      if (authUser.role !== 'ADMIN') {
+        throw new GraphQLError('Not authorized to create bingo items', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      const { error } = validateCreateBingoItem(input);
+      if (error) {
+        throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      try {
+        const newItem = new BingoItem({
+          ...input,
+          createdBy: authUser.userId,
+        });
+
+        await newItem.save();
+        return newItem;
+      } catch (error) {
+        if (error.code === 11000) {
+          throw new GraphQLError('A bingo item already exists at this position', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
+        
+        throw new GraphQLError(`Failed to create bingo item: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    updateBingoItem: async (_, { id, input }, context) => {
+      const authUser = getAuthUser(context);
+      
+      if (authUser.role !== 'ADMIN') {
+        throw new GraphQLError('Not authorized to update bingo items', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      const { error } = validateUpdateBingoItem(input);
+      if (error) {
+        throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      try {
+        const updatedItem = await BingoItem.findByIdAndUpdate(
+          id,
+          { $set: input },
+          { new: true, runValidators: true }
+        );
+
+        if (!updatedItem) {
+          throw new GraphQLError(`Bingo item with ID ${id} not found`, {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        return updatedItem;
+      } catch (error) {
+        if (error.extensions?.code === 'NOT_FOUND') {
+          throw error;
+        }
+        
+        throw new GraphQLError(`Failed to update bingo item: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    toggleBingoItem: async (_, { itemId }, context) => {
+      const authUser = getAuthUser(context);
+
+      try {
+        // Find the bingo item
+        const bingoItem = await BingoItem.findById(itemId);
+        if (!bingoItem) {
+          throw new GraphQLError(`Bingo item with ID ${itemId} not found`, {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Find or create the user's bingo game
+        let game = await BingoGame.findOne({ userId: authUser.userId });
+        if (!game) {
+          game = new BingoGame({
+            userId: authUser.userId,
+            completedItems: [],
+            bingosAchieved: [],
+            totalPoints: 0,
+          });
+        }
+
+        // Check if item is already completed
+        const existingItemIndex = game.completedItems.findIndex(
+          item => item.itemId.toString() === itemId
+        );
+
+        if (existingItemIndex >= 0) {
+          // Remove the item (toggle off)
+          game.completedItems.splice(existingItemIndex, 1);
+        } else {
+          // Add the item (toggle on)
+          game.completedItems.push({
+            itemId: bingoItem._id,
+            completedAt: new Date(),
+          });
+
+          // Publish item completion event
+          pubsub.publish(BINGO_EVENTS.BINGO_ITEM_COMPLETED, {
+            bingoItemCompleted: {
+              userId: authUser.userId,
+              itemId: bingoItem._id,
+              item: bingoItem,
+            },
+          });
+        }
+
+        // Check for new bingos
+        const newBingos = game.checkForBingos();
+        if (newBingos.length > 0) {
+          game.bingosAchieved.push(...newBingos);
+          
+          // Publish bingo achievement events
+          newBingos.forEach(bingo => {
+            pubsub.publish(BINGO_EVENTS.BINGO_ACHIEVED, {
+              bingoAchieved: {
+                userId: authUser.userId,
+                bingo,
+                game,
+              },
+            });
+          });
+        }
+
+        // Update total points and completion status
+        game.totalPoints = game.calculateTotalPoints();
+        game.isCompleted = game.completedItems.length === 16;
+        
+        if (game.isCompleted && !game.gameCompletedAt) {
+          game.gameCompletedAt = new Date();
+        }
+
+        await game.save();
+        await game.populate('completedItems.itemId');
+
+        // Publish game update event
+        pubsub.publish(BINGO_EVENTS.BINGO_GAME_UPDATED, {
+          bingoGameUpdated: game,
+        });
+
+        return game;
+      } catch (error) {
+        if (error.extensions?.code === 'NOT_FOUND') {
+          throw error;
+        }
+        
+        throw new GraphQLError(`Failed to toggle bingo item: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    resetBingoGame: async (_, __, context) => {
+      const authUser = getAuthUser(context);
+
+      try {
+        const game = await BingoGame.findOne({ userId: authUser.userId });
+        if (!game) {
+          throw new GraphQLError('No bingo game found for user', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Reset the game
+        game.completedItems = [];
+        game.bingosAchieved = [];
+        game.totalPoints = 0;
+        game.isCompleted = false;
+        game.gameStartedAt = new Date();
+        game.gameCompletedAt = undefined;
+
+        await game.save();
+        await game.populate('completedItems.itemId');
+
+        return game;
+      } catch (error) {
+        if (error.extensions?.code === 'NOT_FOUND') {
+          throw error;
+        }
+        
+        throw new GraphQLError(`Failed to reset bingo game: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+  },
+
+  Subscription: {
+    bingoItemCompleted: {
+      subscribe: () => pubsub.asyncIterator([BINGO_EVENTS.BINGO_ITEM_COMPLETED]),
+    },
+
+    bingoAchieved: {
+      subscribe: () => pubsub.asyncIterator([BINGO_EVENTS.BINGO_ACHIEVED]),
+    },
+
+    bingoGameUpdated: {
+      subscribe: () => pubsub.asyncIterator([BINGO_EVENTS.BINGO_GAME_UPDATED]),
+    },
+  },
+
+  BingoItem: {
+    id: (parent) => parent._id || parent.id,
+  },
+
+  BingoGame: {
+    id: (parent) => parent._id || parent.id,
+    completedItems: (parent) => parent.completedItems || [],
+    bingosAchieved: (parent) => parent.bingosAchieved || [],
+  },
+
+  BingoCompletedItem: {
+    item: (parent) => parent.itemId,
+    completedAt: (parent) => parent.completedAt.toISOString(),
+  },
+
+  BingoAchievement: {
+    achievedAt: (parent) => parent.achievedAt.toISOString(),
+  },
+};
+
+export default bingoResolvers;

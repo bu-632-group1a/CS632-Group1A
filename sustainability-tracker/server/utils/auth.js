@@ -7,11 +7,23 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 console.log('JWT_SECRET:', JWT_SECRET);
 console.log('JWT_REFRESH_SECRET:', JWT_REFRESH_SECRET);
+
+export const prompteUser = (user) => {
+    const adminEmails = ['judahb@bu.edu', 'judahbernstein@gmail.com'];
+      if (adminEmails.includes(user.email)) {
+        user.role = 'ADMIN';
+      } else {
+        user.role = 'USER';
+      }
+      return user;
+}
+
 export const generateTokens = (user) => {
+  const promotedUser = prompteUser(user);
   const accessToken = jwt.sign(
     { 
       userId: user.id, 
-      role: user.role,
+      role: promotedUser.role,
       firstName: user.firstName,
       lastName: user.lastName,
       fullName: `${user.firstName} ${user.lastName}`,
