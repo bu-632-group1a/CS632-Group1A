@@ -29,6 +29,16 @@ const LeaderboardPage: React.FC = () => {
   const topThree = leaderboard.slice(0, 3);
   const restOfLeaderboard = leaderboard.slice(3);
 
+  // Enhanced leaderboard entries with display names
+  const enhancedLeaderboard = leaderboard.map((entry: any) => ({
+    ...entry,
+    // Try to get the full name from the current user data if it matches
+    name: entry.userId === userId ? (currentUser?.fullName || user?.fullName) : entry.name
+  }));
+
+  const enhancedTopThree = enhancedLeaderboard.slice(0, 3);
+  const enhancedRestOfLeaderboard = enhancedLeaderboard.slice(3);
+
   if (error) {
     return (
       <div className="bg-red-50 p-4 rounded-lg">
@@ -67,11 +77,14 @@ const LeaderboardPage: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {topThree.map((entry, index) => {
+          {enhancedTopThree.map((entry, index) => {
             const rank = index + 1;
             const bgColor = rank === 1 ? 'bg-yellow-50' : rank === 2 ? 'bg-gray-50' : 'bg-amber-50';
             const borderColor = rank === 1 ? 'border-yellow-100' : rank === 2 ? 'border-gray-100' : 'border-amber-100';
             const medalColor = rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-400' : 'text-amber-600';
+            
+            // Display name logic: prefer name, fallback to formatted userId
+            const displayName = entry.name || `User ${entry.userId}`;
             
             return (
               <motion.div 
@@ -92,13 +105,13 @@ const LeaderboardPage: React.FC = () => {
                 <div className="relative mb-4">
                   <img 
                     src={entry.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
-                    alt={entry.name || entry.userId}
+                    alt={displayName}
                     className="w-24 h-24 rounded-full mx-auto object-cover border-4 border-white shadow-lg"
                   />
                 </div>
                 
                 <div className="text-2xl font-bold text-gray-900 mb-2">
-                  {entry.name || entry.userId}
+                  {displayName}
                 </div>
                 
                 <div className="text-primary-600 font-semibold mb-2">
@@ -128,7 +141,7 @@ const LeaderboardPage: React.FC = () => {
           </div>
         ) : (
           <div>
-            {restOfLeaderboard.map((entry) => (
+            {enhancedRestOfLeaderboard.map((entry) => (
               <LeaderboardItem 
                 key={entry.userId} 
                 entry={entry}

@@ -35,6 +35,9 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
     }
   };
 
+  // Display name logic: prefer name, fallback to formatted userId
+  const displayName = entry.name || `User ${entry.userId}`;
+
   return (
     <motion.div
       className={`
@@ -55,13 +58,13 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
       <div className="flex-shrink-0 mr-4">
         <img 
           src={entry.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'} 
-          alt={entry.name || `User ${entry.userId}`} 
+          alt={displayName} 
           className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
         />
       </div>
       
       <div className="flex-1">
-        <h3 className="font-medium text-gray-900">{entry.name || `User ${entry.userId}`}</h3>
+        <h3 className="font-medium text-gray-900">{displayName}</h3>
         <div className="flex items-center">
           <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
             <div 
