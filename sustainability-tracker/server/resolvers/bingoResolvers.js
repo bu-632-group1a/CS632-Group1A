@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { pubsub } from '../index.js';
 import BingoItem from '../models/BingoItem.js';
 import BingoGame from '../models/BingoGame.js';
+import User from '../models/User.js';
 import { getAuthUser } from '../utils/auth.js';
 import { validateCreateBingoItem, validateUpdateBingoItem } from '../validators/bingoValidators.js';
 import { getProjectManagementSustainabilityBingoItems, getAlternativeProjectBingoItems } from '../utils/defaultBingoItems.js';
@@ -103,10 +104,56 @@ const bingoResolvers = {
           { $limit: limit },
         ]);
 
-        return leaderboard.map((entry, index) => ({
-          ...entry,
-          rank: index + 1,
-        }));
+        // Fetch user profile information for each leaderboard entry
+        const enrichedLeaderboard = await Promise.all(
+          leaderboard.map(async (entry, index) => {
+            try {
+              const user = await User.findById(entry.userId).select('firstName lastName username profilePicture city state company');
+              
+              return {
+                ...entry,
+                rank: index + 1,
+                user: user ? {
+                  id: user._id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  fullName: `${user.firstName} ${user.lastName}`,
+                  username: user.username,
+                  profilePicture: user.profilePicture,
+                  location: user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null,
+                  company: user.company,
+                } : {
+                  id: entry.userId,
+                  firstName: 'Unknown',
+                  lastName: 'User',
+                  fullName: 'Unknown User',
+                  username: 'unknown',
+                  profilePicture: null,
+                  location: null,
+                  company: null,
+                }
+              };
+            } catch (userError) {
+              console.error(`Failed to fetch user ${entry.userId}:`, userError);
+              return {
+                ...entry,
+                rank: index + 1,
+                user: {
+                  id: entry.userId,
+                  firstName: 'Unknown',
+                  lastName: 'User',
+                  fullName: 'Unknown User',
+                  username: 'unknown',
+                  profilePicture: null,
+                  location: null,
+                  company: null,
+                }
+              };
+            }
+          })
+        );
+
+        return enrichedLeaderboard;
       } catch (error) {
         throw new GraphQLError(`Failed to fetch bingo leaderboard: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },

@@ -124,6 +124,7 @@ export const typeDefs = gql`
 
   type LeaderboardEntry {
     userId: String
+    user: User
     totalActions: Int!
     totalImpact: Float!
     averageImpact: Float!
@@ -213,6 +214,7 @@ export const typeDefs = gql`
 
   type BingoLeaderboardEntry {
     userId: String!
+    user: User
     totalPoints: Int!
     completedItemsCount: Int!
     bingosCount: Int!

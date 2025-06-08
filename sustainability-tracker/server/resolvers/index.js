@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { pubsub } from '../index.js';
 import SustainabilityAction from '../models/SustainabilityAction.js';
+import User from '../models/User.js';
 import { validateCreateAction, validateUpdateAction } from '../validators/actionValidators.js';
 
 // Subscription event names
@@ -130,7 +131,49 @@ const resolvers = {
           rank: index + 1,
         }));
 
+        // Fetch user profile information including profile pictures
         for (const entry of rankedData) {
+          try {
+            const user = await User.findById(entry.userId).select('firstName lastName username profilePicture city state company');
+            if (user) {
+              entry.user = {
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                fullName: `${user.firstName} ${user.lastName}`,
+                username: user.username,
+                profilePicture: user.profilePicture,
+                location: user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null,
+                company: user.company,
+              };
+            } else {
+              // Fallback for deleted users
+              entry.user = {
+                id: entry.userId,
+                firstName: 'Unknown',
+                lastName: 'User',
+                fullName: 'Unknown User',
+                username: 'unknown',
+                profilePicture: null,
+                location: null,
+                company: null,
+              };
+            }
+          } catch (userError) {
+            console.error(`Failed to fetch user ${entry.userId}:`, userError);
+            entry.user = {
+              id: entry.userId,
+              firstName: 'Unknown',
+              lastName: 'User',
+              fullName: 'Unknown User',
+              username: 'unknown',
+              profilePicture: null,
+              location: null,
+              company: null,
+            };
+          }
+
+          // Fetch actions by type for this user
           const actionsByType = await SustainabilityAction.aggregate([
             { $match: { userId: entry.userId } },
             {
