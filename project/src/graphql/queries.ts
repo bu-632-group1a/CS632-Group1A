@@ -135,16 +135,6 @@ export const GET_BINGO_LEADERBOARD = gql`
   query GetBingoLeaderboard($limit: Int) {
     bingoLeaderboard(limit: $limit) {
       userId
-      user {
-        id
-        firstName
-        lastName
-        fullName
-        username
-        profilePicture
-        location
-        company
-      }
       fullName
       profilePicture
       location
