@@ -67,7 +67,17 @@ bingoGameSchema.index({ totalPoints: -1, gameCompletedAt: 1 });
 
 // Instance method to check for new bingos
 bingoGameSchema.methods.checkForBingos = function() {
-  const completedPositions = this.completedItems.map(item => item.position);
+  // Create a copy of completed items to avoid mutation issues
+  const completedItems = [...this.completedItems];
+  const completedPositions = [];
+  
+  // Safely extract positions from completed items
+  for (const item of completedItems) {
+    if (item.position !== undefined) {
+      completedPositions.push(item.position);
+    }
+  }
+  
   const newBingos = [];
   
   // Check rows (0-3, 4-7, 8-11, 12-15)
@@ -76,12 +86,12 @@ bingoGameSchema.methods.checkForBingos = function() {
     if (rowPositions.every(pos => completedPositions.includes(pos))) {
       const existingBingo = this.bingosAchieved.find(bingo => 
         bingo.type === 'ROW' && 
-        JSON.stringify(bingo.pattern.sort()) === JSON.stringify(rowPositions.sort())
+        JSON.stringify([...bingo.pattern].sort()) === JSON.stringify([...rowPositions].sort())
       );
       if (!existingBingo) {
         newBingos.push({
           type: 'ROW',
-          pattern: rowPositions,
+          pattern: [...rowPositions], // Create a copy to avoid mutation
           pointsAwarded: 200,
         });
       }
@@ -94,12 +104,12 @@ bingoGameSchema.methods.checkForBingos = function() {
     if (colPositions.every(pos => completedPositions.includes(pos))) {
       const existingBingo = this.bingosAchieved.find(bingo => 
         bingo.type === 'COLUMN' && 
-        JSON.stringify(bingo.pattern.sort()) === JSON.stringify(colPositions.sort())
+        JSON.stringify([...bingo.pattern].sort()) === JSON.stringify([...colPositions].sort())
       );
       if (!existingBingo) {
         newBingos.push({
           type: 'COLUMN',
-          pattern: colPositions,
+          pattern: [...colPositions], // Create a copy to avoid mutation
           pointsAwarded: 200,
         });
       }
@@ -113,12 +123,12 @@ bingoGameSchema.methods.checkForBingos = function() {
   if (diagonal1.every(pos => completedPositions.includes(pos))) {
     const existingBingo = this.bingosAchieved.find(bingo => 
       bingo.type === 'DIAGONAL' && 
-      JSON.stringify(bingo.pattern.sort()) === JSON.stringify(diagonal1.sort())
+      JSON.stringify([...bingo.pattern].sort()) === JSON.stringify([...diagonal1].sort())
     );
     if (!existingBingo) {
       newBingos.push({
         type: 'DIAGONAL',
-        pattern: diagonal1,
+        pattern: [...diagonal1], // Create a copy to avoid mutation
         pointsAwarded: 200,
       });
     }
@@ -127,12 +137,12 @@ bingoGameSchema.methods.checkForBingos = function() {
   if (diagonal2.every(pos => completedPositions.includes(pos))) {
     const existingBingo = this.bingosAchieved.find(bingo => 
       bingo.type === 'DIAGONAL' && 
-      JSON.stringify(bingo.pattern.sort()) === JSON.stringify(diagonal2.sort())
+      JSON.stringify([...bingo.pattern].sort()) === JSON.stringify([...diagonal2].sort())
     );
     if (!existingBingo) {
       newBingos.push({
         type: 'DIAGONAL',
-        pattern: diagonal2,
+        pattern: [...diagonal2], // Create a copy to avoid mutation
         pointsAwarded: 200,
       });
     }

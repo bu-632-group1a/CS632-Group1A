@@ -1,5 +1,6 @@
 import express from 'express';
 import http from 'http';
+import cors from 'cors';
 import { ApolloServer } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
@@ -7,7 +8,6 @@ import { useServer } from 'graphql-ws/lib/use/ws';
 import { PubSub } from 'graphql-subscriptions';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import cors from 'cors';
 
 import { typeDefs } from './schema/typeDefs.js';
 import resolvers from './resolvers/index.js';
@@ -53,29 +53,59 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
+  // Enhanced CORS configuration for production deployment
   const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
     'https://cs-632-group1-a.vercel.app',
-    'http://localhost:5173', // for local dev
-    'http://localhost:4000', // for local dev
-    'https://studio.apollographql.com', // for local dev
+    'https://cs632-group1a.onrender.com',
+    // Add any other domains you need
+    ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [])
   ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
+  const corsOptions = {
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log(`CORS blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization', 
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      'Access-Control-Request-Method',
+      'Access-Control-Request-Headers'
+    ],
+    exposedHeaders: ['Authorization'],
+    maxAge: 86400, // 24 hours
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  };
 
-// app.use(cors({
-//   origin: 'https://cs-632-group1-a.vercel.app', // your Vercel frontend URL
-//   credentials: true,
-// }));
+  // Apply CORS middleware
+  app.use(cors(corsOptions));
+
+  // Add explicit OPTIONS handler for preflight requests
+  app.options('*', cors(corsOptions));
+
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      service: 'Sustainability Tracker GraphQL API'
+    });
+  });
 
   // Create GraphQL schema
   const schema = makeExecutableSchema({ 
@@ -112,16 +142,20 @@ app.use(cors({
         user,
       };
     },
+    cors: false, // Disable Apollo's built-in CORS since we're using Express CORS
+    introspection: true, // Enable introspection for GraphQL Playground
+    playground: true, // Enable GraphQL Playground
   });
 
   // Start Apollo Server
   await server.start();
   
   // Apply Apollo middleware to Express
-server.applyMiddleware({
-  app,
-  cors: false, // 🚫 disable Apollo's built-in CORS handling
-});
+  server.applyMiddleware({ 
+    app,
+    cors: false, // Disable Apollo's CORS since we're using Express CORS
+    path: '/graphql'
+  });
   
   // Set up WebSocket server for subscriptions
   const wsServer = new WebSocketServer({
@@ -137,12 +171,29 @@ server.applyMiddleware({
   httpServer.listen(PORT, () => {
     console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
     console.log(`🔌 Subscriptions ready at ws://localhost:${PORT}${server.graphqlPath}`);
+    console.log(`🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+    console.log(`🏥 Health check available at http://localhost:${PORT}/health`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    serverCleanup.dispose();
+    await server.stop();
+    httpServer.close(() => {
+      console.log('Process terminated');
+    });
   });
 }
 
 // Handle server errors
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
   process.exit(1);
 });
 
