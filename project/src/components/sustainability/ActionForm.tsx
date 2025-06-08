@@ -40,30 +40,52 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
     errorPolicy: 'all'
   });
   
-  // Safely extract user data with fallbacks
-  const currentUser = userData?.me || null;
-  const userId = currentUser?.id || user?.id || null;
+  // Safely extract user data with multiple fallbacks
+  let currentUser = null;
+  let userId = null;
+  
+  try {
+    currentUser = userData && userData.me ? userData.me : null;
+    userId = currentUser && currentUser.id ? currentUser.id : (user && user.id ? user.id : null);
+  } catch (extractError) {
+    console.warn('Error extracting user data:', extractError);
+    userId = user && user.id ? user.id : null;
+  }
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormInputs>();
   
   const [createAction, { loading, error }] = useMutation(CREATE_SUSTAINABILITY_ACTION, {
     errorPolicy: 'all',
-    update(cache, result) {
+    update(cache, mutationResult) {
+      // Completely safe cache update with extensive error handling
       try {
-        // Safely destructure the result
-        const newAction = result?.data?.createSustainabilityAction;
-        if (!newAction || !userId) return;
+        if (!mutationResult || !mutationResult.data) {
+          console.warn('No mutation result data available');
+          return;
+        }
 
-        // Update actions cache
+        const newActionData = mutationResult.data;
+        if (!newActionData.createSustainabilityAction) {
+          console.warn('No createSustainabilityAction in result');
+          return;
+        }
+
+        const newAction = newActionData.createSustainabilityAction;
+        if (!userId) {
+          console.warn('No userId available for cache update');
+          return;
+        }
+
+        // Update actions cache with extensive error handling
         try {
-          const existingActions = cache.readQuery({
+          const existingActionsQuery = cache.readQuery({
             query: GET_SUSTAINABILITY_ACTIONS,
             variables: {
               filter: { userId }
             }
           });
           
-          if (existingActions?.sustainabilityActions) {
+          if (existingActionsQuery && existingActionsQuery.sustainabilityActions) {
             cache.writeQuery({
               query: GET_SUSTAINABILITY_ACTIONS,
               variables: {
@@ -72,60 +94,74 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
               data: {
                 sustainabilityActions: [
                   newAction,
-                  ...existingActions.sustainabilityActions,
+                  ...existingActionsQuery.sustainabilityActions,
                 ],
               },
             });
           }
-        } catch (cacheError) {
-          console.warn('Failed to update actions cache:', cacheError);
+        } catch (actionsCacheError) {
+          console.warn('Failed to update actions cache:', actionsCacheError);
         }
 
-        // Update metrics cache
+        // Update metrics cache with extensive error handling
         try {
-          const existingMetrics = cache.readQuery({
+          const existingMetricsQuery = cache.readQuery({
             query: GET_SUSTAINABILITY_METRICS,
             variables: { userId }
           });
           
-          if (existingMetrics?.sustainabilityMetrics && newAction.impactScore) {
+          if (existingMetricsQuery && 
+              existingMetricsQuery.sustainabilityMetrics && 
+              newAction.impactScore !== undefined && 
+              newAction.impactScore !== null) {
+            
+            const currentMetrics = existingMetricsQuery.sustainabilityMetrics;
+            const currentTotalActions = currentMetrics.totalActions || 0;
+            const currentTotalImpact = currentMetrics.totalImpact || 0;
+            
             cache.writeQuery({
               query: GET_SUSTAINABILITY_METRICS,
               variables: { userId },
               data: {
                 sustainabilityMetrics: {
-                  ...existingMetrics.sustainabilityMetrics,
-                  totalActions: (existingMetrics.sustainabilityMetrics.totalActions || 0) + 1,
-                  totalImpact: (existingMetrics.sustainabilityMetrics.totalImpact || 0) + newAction.impactScore,
+                  ...currentMetrics,
+                  totalActions: currentTotalActions + 1,
+                  totalImpact: currentTotalImpact + newAction.impactScore,
                 },
               },
             });
           }
-        } catch (cacheError) {
-          console.warn('Failed to update metrics cache:', cacheError);
+        } catch (metricsCacheError) {
+          console.warn('Failed to update metrics cache:', metricsCacheError);
         }
       } catch (updateError) {
-        console.warn('Cache update failed:', updateError);
+        console.warn('Cache update failed completely:', updateError);
       }
     },
-    onCompleted: (data) => {
+    onCompleted: (completedData) => {
       try {
-        if (data?.createSustainabilityAction) {
+        if (completedData && completedData.createSustainabilityAction) {
           reset();
-          onSuccess?.();
+          if (onSuccess && typeof onSuccess === 'function') {
+            onSuccess();
+          }
         }
       } catch (completedError) {
         console.warn('onCompleted handler error:', completedError);
       }
     },
-    onError: (error) => {
-      console.error('Error creating sustainability action:', error);
+    onError: (mutationError) => {
+      console.error('Error creating sustainability action:', mutationError);
       // Log the specific error details for debugging
-      if (error.graphQLErrors?.length > 0) {
-        console.error('GraphQL Errors:', error.graphQLErrors);
-      }
-      if (error.networkError) {
-        console.error('Network Error:', error.networkError);
+      try {
+        if (mutationError.graphQLErrors && mutationError.graphQLErrors.length > 0) {
+          console.error('GraphQL Errors:', mutationError.graphQLErrors);
+        }
+        if (mutationError.networkError) {
+          console.error('Network Error:', mutationError.networkError);
+        }
+      } catch (errorLoggingError) {
+        console.warn('Error logging mutation error:', errorLoggingError);
       }
     }
   });
@@ -137,25 +173,22 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
     }
 
     try {
-      console.log('Submitting sustainability action:', {
+      const submissionData = {
         actionType: data.actionType,
         description: data.description || '',
         userId: userId,
         performedAt: new Date().toISOString(),
-      });
+      };
+
+      console.log('Submitting sustainability action:', submissionData);
 
       await createAction({
         variables: {
-          input: {
-            actionType: data.actionType,
-            description: data.description || '',
-            userId: userId,
-            performedAt: new Date().toISOString(),
-          },
+          input: submissionData,
         },
       });
-    } catch (err) {
-      console.error('Error creating action:', err);
+    } catch (submitError) {
+      console.error('Error in form submission:', submitError);
     }
   };
 
@@ -204,16 +237,37 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
           <div className="flex-1 min-w-0">
             <p className="text-red-700 font-medium text-sm sm:text-base">Failed to save action</p>
             <p className="text-red-600 text-xs sm:text-sm mt-1 break-words">
-              {error.graphQLErrors?.[0]?.message || error.message || 'Please try again.'}
+              {(() => {
+                try {
+                  if (error.graphQLErrors && error.graphQLErrors.length > 0 && error.graphQLErrors[0].message) {
+                    return error.graphQLErrors[0].message;
+                  }
+                  if (error.message) {
+                    return error.message;
+                  }
+                  return 'Please try again.';
+                } catch (errorDisplayError) {
+                  return 'An error occurred. Please try again.';
+                }
+              })()}
             </p>
-            {error.graphQLErrors?.length > 0 && (
-              <details className="mt-2">
-                <summary className="text-red-600 text-xs cursor-pointer">Technical Details</summary>
-                <pre className="text-red-500 text-xs mt-1 whitespace-pre-wrap overflow-x-auto">
-                  {JSON.stringify(error.graphQLErrors, null, 2)}
-                </pre>
-              </details>
-            )}
+            {(() => {
+              try {
+                if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+                  return (
+                    <details className="mt-2">
+                      <summary className="text-red-600 text-xs cursor-pointer">Technical Details</summary>
+                      <pre className="text-red-500 text-xs mt-1 whitespace-pre-wrap overflow-x-auto">
+                        {JSON.stringify(error.graphQLErrors, null, 2)}
+                      </pre>
+                    </details>
+                  );
+                }
+                return null;
+              } catch (detailsError) {
+                return null;
+              }
+            })()}
           </div>
         </motion.div>
       )}
