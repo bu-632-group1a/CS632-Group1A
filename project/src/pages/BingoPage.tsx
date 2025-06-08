@@ -185,7 +185,7 @@ const BingoPage: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <motion.h1 
             className="text-3xl font-bold text-gray-900 mb-1"
@@ -205,7 +205,7 @@ const BingoPage: React.FC = () => {
           </motion.p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-row flex-wrap items-center gap-2 justify-start md:justify-end w-full md:w-auto">
           {isAdmin && (
             <Button
               variant={showAdminPanel ? "primary" : "outline"}
