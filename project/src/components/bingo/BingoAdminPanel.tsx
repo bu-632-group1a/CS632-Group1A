@@ -562,34 +562,47 @@ const BingoAdminPanel: React.FC = () => {
                 </div>
               ) : leaderboard.length > 0 ? (
                 <div className="space-y-3">
-                  {leaderboard.map((entry: any, index: number) => (
-                    <div
-                      key={entry.userId}
-                      className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-4">
-                          <span className="text-sm font-bold text-primary-600">
-                            {entry.rank}
-                          </span>
+                  {leaderboard.map((entry: any, index: number) => {
+                    // Get display name from user object or fallback to userId
+                    const displayName = entry.user?.fullName || entry.user?.firstName || `User ${entry.userId}`;
+                    const profilePicture = entry.user?.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg';
+                    
+                    return (
+                      <div
+                        key={entry.userId}
+                        className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
+                      >
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-4">
+                            <span className="text-sm font-bold text-primary-600">
+                              {entry.rank}
+                            </span>
+                          </div>
+                          <div className="flex items-center mr-4">
+                            <img 
+                              src={profilePicture}
+                              alt={displayName}
+                              className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm mr-3"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900">{displayName}</p>
+                              <p className="text-sm text-gray-500">
+                                {entry.completedItemsCount} items • {entry.bingosCount} bingos
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">User {entry.userId}</p>
-                          <p className="text-sm text-gray-500">
-                            {entry.completedItemsCount} items • {entry.bingosCount} bingos
-                          </p>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-primary-600">
+                            {entry.totalPoints} pts
+                          </div>
+                          {entry.isCompleted && (
+                            <Badge variant="success" size="sm">Completed</Badge>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-primary-600">
-                          {entry.totalPoints} pts
-                        </div>
-                        {entry.isCompleted && (
-                          <Badge variant="success" size="sm">Completed</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
