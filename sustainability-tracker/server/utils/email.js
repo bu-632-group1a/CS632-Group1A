@@ -2,14 +2,23 @@ import nodemailer from 'nodemailer';
 
 // Create transporter using environment variables
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  // Check if email configuration is available
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('⚠️  Email configuration missing. Password reset emails will not be sent.');
+    return null;
+  }
+
+  return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: process.env.EMAIL_PORT || 587,
+    port: parseInt(process.env.EMAIL_PORT) || 587,
     secure: false, // true for 465, false for other ports
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates for development
+    }
   });
 };
 
@@ -17,8 +26,12 @@ export const sendVerificationEmail = async (email, verificationToken) => {
   try {
     const transporter = createTransporter();
     
+    if (!transporter) {
+      throw new Error('Email service not configured. Please set EMAIL_USER and EMAIL_PASS environment variables.');
+    }
+    
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"Sustainability Tracker" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Verify Your Email Address',
       html: `
@@ -42,11 +55,11 @@ export const sendVerificationEmail = async (email, verificationToken) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent:', result.messageId);
+    console.log('✅ Verification email sent:', result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error('Error sending verification email:', error);
-    throw new Error('Failed to send verification email');
+    console.error('❌ Error sending verification email:', error);
+    throw new Error(`Failed to send verification email: ${error.message}`);
   }
 };
 
@@ -54,8 +67,12 @@ export const sendPasswordResetEmail = async (email, resetToken, firstName) => {
   try {
     const transporter = createTransporter();
     
+    if (!transporter) {
+      throw new Error('Email service not configured. Please set EMAIL_USER and EMAIL_PASS environment variables.');
+    }
+    
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"Sustainability Tracker" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Reset Your Password - Sustainability Tracker',
       html: `
@@ -112,11 +129,11 @@ export const sendPasswordResetEmail = async (email, resetToken, firstName) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', result.messageId);
+    console.log('✅ Password reset email sent:', result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error('Error sending password reset email:', error);
-    throw new Error('Failed to send password reset email');
+    console.error('❌ Error sending password reset email:', error);
+    throw new Error(`Failed to send password reset email: ${error.message}`);
   }
 };
 
@@ -124,8 +141,13 @@ export const sendPasswordResetConfirmationEmail = async (email, firstName) => {
   try {
     const transporter = createTransporter();
     
+    if (!transporter) {
+      console.warn('⚠️  Email service not configured. Skipping confirmation email.');
+      return { success: false, message: 'Email service not configured' };
+    }
+    
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"Sustainability Tracker" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Password Successfully Reset - Sustainability Tracker',
       html: `
@@ -176,10 +198,29 @@ export const sendPasswordResetConfirmationEmail = async (email, firstName) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('Password reset confirmation email sent:', result.messageId);
+    console.log('✅ Password reset confirmation email sent:', result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error('Error sending password reset confirmation email:', error);
-    throw new Error('Failed to send password reset confirmation email');
+    console.error('❌ Error sending password reset confirmation email:', error);
+    // Don't throw error for confirmation emails - they're not critical
+    return { success: false, message: error.message };
+  }
+};
+
+// Test email configuration
+export const testEmailConfiguration = async () => {
+  try {
+    const transporter = createTransporter();
+    
+    if (!transporter) {
+      return { success: false, message: 'Email configuration missing' };
+    }
+
+    await transporter.verify();
+    console.log('✅ Email configuration is valid');
+    return { success: true, message: 'Email configuration is valid' };
+  } catch (error) {
+    console.error('❌ Email configuration test failed:', error);
+    return { success: false, message: `Email configuration test failed: ${error.message}` };
   }
 };

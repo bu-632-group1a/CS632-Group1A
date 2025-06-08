@@ -11,7 +11,7 @@ import {
   validateChangePassword
 } from '../validators/userValidators.js';
 import { generateTokens, verifyRefreshToken, getAuthUser } from '../utils/auth.js';
-import { sendVerificationEmail, sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from '../utils/email.js';
+import { sendVerificationEmail, sendPasswordResetEmail, sendPasswordResetConfirmationEmail, testEmailConfiguration } from '../utils/email.js';
 
 const userResolvers = {
   Query: {
@@ -37,6 +37,15 @@ const userResolvers = {
       }
       
       return await User.find({});
+    },
+
+    // Test email configuration endpoint
+    testEmailConfig: async () => {
+      const result = await testEmailConfiguration();
+      return {
+        success: result.success,
+        message: result.message,
+      };
     },
   },
 
@@ -79,12 +88,12 @@ const userResolvers = {
       const verificationToken = user.generateEmailVerificationToken();
       const savedUser = await user.save();
 
-      // Send verification email
+      // Send verification email (don't fail registration if email fails)
       try {
         await sendVerificationEmail(savedUser.email, verificationToken);
-        console.log(`Verification email sent to ${savedUser.email}`);
+        console.log(`✅ Verification email sent to ${savedUser.email}`);
       } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
+        console.error('⚠️  Failed to send verification email:', emailError.message);
         // Don't fail registration if email sending fails
       }
 
@@ -150,35 +159,56 @@ const userResolvers = {
 
       const { email } = input;
 
-      // Find user by email
-      const user = await User.findOne({ email });
-      if (!user) {
-        // Don't reveal if email exists or not for security
+      try {
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+          // Don't reveal if email exists or not for security
+          return {
+            success: true,
+            message: 'If an account with that email exists, a password reset link has been sent.',
+          };
+        }
+
+        // Generate password reset token
+        const resetToken = user.generatePasswordResetToken();
+        await user.save();
+
+        // Send password reset email
+        try {
+          await sendPasswordResetEmail(user.email, resetToken, user.firstName);
+          console.log(`✅ Password reset email sent to ${user.email}`);
+        } catch (emailError) {
+          console.error('❌ Failed to send password reset email:', emailError.message);
+          
+          // Check if it's a configuration issue
+          if (emailError.message.includes('Email service not configured')) {
+            throw new GraphQLError('Email service is not configured. Please contact the administrator.', {
+              extensions: { code: 'EMAIL_CONFIG_ERROR' },
+            });
+          }
+          
+          throw new GraphQLError('Failed to send password reset email. Please try again later.', {
+            extensions: { code: 'EMAIL_ERROR' },
+          });
+        }
+
         return {
           success: true,
           message: 'If an account with that email exists, a password reset link has been sent.',
         };
-      }
-
-      // Generate password reset token
-      const resetToken = user.generatePasswordResetToken();
-      await user.save();
-
-      // Send password reset email
-      try {
-        await sendPasswordResetEmail(user.email, resetToken, user.firstName);
-        console.log(`Password reset email sent to ${user.email}`);
-      } catch (emailError) {
-        console.error('Failed to send password reset email:', emailError);
-        throw new GraphQLError('Failed to send password reset email', {
-          extensions: { code: 'EMAIL_ERROR' },
+      } catch (error) {
+        // If it's already a GraphQLError, re-throw it
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        
+        // For any other error, throw a generic error
+        console.error('❌ Forgot password error:', error);
+        throw new GraphQLError('An error occurred while processing your request. Please try again later.', {
+          extensions: { code: 'INTERNAL_ERROR' },
         });
       }
-
-      return {
-        success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.',
-      };
     },
 
     resetPassword: async (_, { input }) => {
@@ -219,12 +249,12 @@ const userResolvers = {
       
       await user.save();
 
-      // Send confirmation email
+      // Send confirmation email (don't fail if this fails)
       try {
         await sendPasswordResetConfirmationEmail(user.email, user.firstName);
-        console.log(`Password reset confirmation email sent to ${user.email}`);
+        console.log(`✅ Password reset confirmation email sent to ${user.email}`);
       } catch (emailError) {
-        console.error('Failed to send password reset confirmation email:', emailError);
+        console.error('⚠️  Failed to send password reset confirmation email:', emailError.message);
         // Don't fail the password reset if email sending fails
       }
 

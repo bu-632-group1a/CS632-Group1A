@@ -59,6 +59,7 @@ async function startServer() {
     'http://localhost:5173',
     'https://cs-632-group1-a.vercel.app',
     'https://cs632-group1a.onrender.com',
+    'https://studio.apollographql.com',    
     // Add any other domains you need
     ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [])
   ];

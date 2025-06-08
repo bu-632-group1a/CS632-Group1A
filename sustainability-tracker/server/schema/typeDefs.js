@@ -83,6 +83,11 @@ export const typeDefs = gql`
     message: String!
   }
 
+  type EmailConfigResponse {
+    success: Boolean!
+    message: String!
+  }
+
   type SustainabilityAction {
     id: ID!
     actionType: ActionType!
@@ -104,6 +109,17 @@ export const typeDefs = gql`
     ENERGY_SAVING
     WATER_CONSERVATION
     WASTE_REDUCTION
+    HOME_ENERGY_EFFICIENCY
+    SUSTAINABLE_FOOD
+    BIKE_WALK
+    RENEWABLE_ENERGY
+    ECO_FRIENDLY_PRODUCTS
+    CARBON_OFFSET
+    PLANT_BASED_MEAL
+    REPAIR_REUSE
+    GREEN_TRANSPORTATION
+    SUSTAINABLE_SHOPPING
+    ENVIRONMENTAL_EDUCATION
     OTHER
   }
 
@@ -276,6 +292,7 @@ export const typeDefs = gql`
   type Query {
     me: User!
     users: [User!]!
+    testEmailConfig: EmailConfigResponse!
     sustainabilityActions(filter: SustainabilityActionFilterInput): [SustainabilityAction!]!
     sustainabilityAction(id: ID!): SustainabilityAction
     sustainabilityMetrics(userId: String): SustainabilityMetrics!
