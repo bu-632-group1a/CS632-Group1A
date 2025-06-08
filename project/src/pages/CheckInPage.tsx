@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, CheckCheck, BarChart2, Home, AlertCircle, Calendar, Clock, MapPin, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CheckCircle, CheckCheck, BarChart2, Home, AlertCircle, Calendar, Clock, MapPin, User, QrCode } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import QRCodeModal from '../components/ui/QRCodeModal';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useCheckIns } from '../hooks/useCheckIns';
@@ -22,9 +23,24 @@ const CheckInPage: React.FC = () => {
     getCheckInBySessionId 
   } = useCheckIns();
   
+  const [searchParams] = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [processingSession, setProcessingSession] = useState<string | null>(null);
+  const [qrModalSession, setQrModalSession] = useState<string | null>(null);
+
+  // Handle automatic check-in from QR code
+  useEffect(() => {
+    const sessionId = searchParams.get('session');
+    const autoCheckIn = searchParams.get('auto');
+    
+    if (sessionId && autoCheckIn === 'true' && isAuthenticated) {
+      const session = sessions.find(s => s.id === sessionId);
+      if (session && !isSessionCheckedIn(sessionId)) {
+        handleCheckIn(sessionId, true);
+      }
+    }
+  }, [searchParams, isAuthenticated, sessions]);
 
   if (!isAuthenticated) {
     return (
@@ -41,7 +57,7 @@ const CheckInPage: React.FC = () => {
     );
   }
 
-  const handleCheckIn = async (sessionId: string) => {
+  const handleCheckIn = async (sessionId: string, isAutomatic = false) => {
     const session = sessions.find(s => s.id === sessionId);
     if (!session) return;
 
@@ -62,13 +78,17 @@ const CheckInPage: React.FC = () => {
         
         setTimeout(() => {
           setShowSuccess(false);
-        }, 3000);
+        }, isAutomatic ? 5000 : 3000);
       }
     } catch (error) {
       console.error('Error toggling check-in:', error);
     } finally {
       setProcessingSession(null);
     }
+  };
+
+  const handleShowQRCode = (sessionId: string) => {
+    setQrModalSession(sessionId);
   };
 
   const checkedInCount = checkIns.length;
@@ -89,6 +109,8 @@ const CheckInPage: React.FC = () => {
     visible: { opacity: 1, y: 0 }
   };
 
+  const selectedSessionData = qrModalSession ? sessions.find(s => s.id === qrModalSession) : null;
+
   return (
     <div className="relative">
       <AnimatePresence>
@@ -107,6 +129,15 @@ const CheckInPage: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* QR Code Modal */}
+      {selectedSessionData && (
+        <QRCodeModal
+          isOpen={!!qrModalSession}
+          onClose={() => setQrModalSession(null)}
+          session={selectedSessionData}
+        />
+      )}
       
       <motion.div
         className="space-y-6"
@@ -211,6 +242,10 @@ const CheckInPage: React.FC = () => {
                   <CheckCircle size={16} className="mr-2 text-primary-600" />
                   <span>Get personalized session recommendations</span>
                 </li>
+                <li className="flex items-center text-sm text-gray-600">
+                  <QrCode size={16} className="mr-2 text-primary-600" />
+                  <span>Generate QR codes for easy attendee check-in</span>
+                </li>
               </ul>
             </div>
           </div>
@@ -311,34 +346,48 @@ const CheckInPage: React.FC = () => {
                                 })}
                               </div>
                               
-                              {isCheckedIn ? (
+                              <div className="flex items-center gap-2">
+                                {/* QR Code Button */}
                                 <Button
                                   variant="outline"
-                                  onClick={() => handleCheckIn(session.id)}
-                                  disabled={isProcessing}
-                                  icon={isProcessing ? undefined : <CheckCheck size={18} />}
-                                  className="text-green-600 border-green-600 hover:bg-green-50"
+                                  size="sm"
+                                  onClick={() => handleShowQRCode(session.id)}
+                                  icon={<QrCode size={16} />}
+                                  className="text-gray-600 border-gray-300 hover:bg-gray-50"
                                 >
-                                  {isProcessing ? (
-                                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    'Checked In'
-                                  )}
+                                  QR Code
                                 </Button>
-                              ) : (
-                                <Button
-                                  variant="primary"
-                                  onClick={() => handleCheckIn(session.id)}
-                                  disabled={isProcessing}
-                                  icon={isProcessing ? undefined : <CheckCircle size={18} />}
-                                >
-                                  {isProcessing ? (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                  ) : (
-                                    'Check In'
-                                  )}
-                                </Button>
-                              )}
+
+                                {/* Check-in Button */}
+                                {isCheckedIn ? (
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => handleCheckIn(session.id)}
+                                    disabled={isProcessing}
+                                    icon={isProcessing ? undefined : <CheckCheck size={18} />}
+                                    className="text-green-600 border-green-600 hover:bg-green-50"
+                                  >
+                                    {isProcessing ? (
+                                      <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      'Checked In'
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="primary"
+                                    onClick={() => handleCheckIn(session.id)}
+                                    disabled={isProcessing}
+                                    icon={isProcessing ? undefined : <CheckCircle size={18} />}
+                                  >
+                                    {isProcessing ? (
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      'Check In'
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
