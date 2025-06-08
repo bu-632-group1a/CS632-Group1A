@@ -1,9 +1,17 @@
 import { GraphQLError } from 'graphql';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
-import { validateRegister, validateLogin, validateProfilePicture, validateUpdateUserProfile } from '../validators/userValidators.js';
+import { 
+  validateRegister, 
+  validateLogin, 
+  validateProfilePicture, 
+  validateUpdateUserProfile,
+  validateForgotPassword,
+  validateResetPassword,
+  validateChangePassword
+} from '../validators/userValidators.js';
 import { generateTokens, verifyRefreshToken, getAuthUser } from '../utils/auth.js';
-import { sendVerificationEmail } from '../utils/email.js';
+import { sendVerificationEmail, sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from '../utils/email.js';
 
 const userResolvers = {
   Query: {
@@ -129,6 +137,138 @@ const userResolvers = {
         user,
         accessToken,
         refreshToken,
+      };
+    },
+
+    forgotPassword: async (_, { input }) => {
+      const { error } = validateForgotPassword(input);
+      if (error) {
+        throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const { email } = input;
+
+      // Find user by email
+      const user = await User.findOne({ email });
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return {
+          success: true,
+          message: 'If an account with that email exists, a password reset link has been sent.',
+        };
+      }
+
+      // Generate password reset token
+      const resetToken = user.generatePasswordResetToken();
+      await user.save();
+
+      // Send password reset email
+      try {
+        await sendPasswordResetEmail(user.email, resetToken, user.firstName);
+        console.log(`Password reset email sent to ${user.email}`);
+      } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError);
+        throw new GraphQLError('Failed to send password reset email', {
+          extensions: { code: 'EMAIL_ERROR' },
+        });
+      }
+
+      return {
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      };
+    },
+
+    resetPassword: async (_, { input }) => {
+      const { error } = validateResetPassword(input);
+      if (error) {
+        throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const { token, newPassword } = input;
+
+      // Find user with valid reset token
+      const user = await User.findOne({
+        passwordResetExpires: { $gt: Date.now() },
+      });
+
+      if (!user) {
+        throw new GraphQLError('Invalid or expired reset token', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      // Verify the token
+      const isValidToken = user.verifyPasswordResetToken(token);
+      if (!isValidToken) {
+        throw new GraphQLError('Invalid or expired reset token', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      // Update password and clear reset token
+      user.password = newPassword;
+      user.clearPasswordResetToken();
+      
+      // Clear all refresh tokens for security
+      user.refreshTokens = [];
+      
+      await user.save();
+
+      // Send confirmation email
+      try {
+        await sendPasswordResetConfirmationEmail(user.email, user.firstName);
+        console.log(`Password reset confirmation email sent to ${user.email}`);
+      } catch (emailError) {
+        console.error('Failed to send password reset confirmation email:', emailError);
+        // Don't fail the password reset if email sending fails
+      }
+
+      return {
+        success: true,
+        message: 'Password has been reset successfully. You can now log in with your new password.',
+      };
+    },
+
+    changePassword: async (_, { input }, context) => {
+      const authUser = getAuthUser(context);
+      
+      const { error } = validateChangePassword(input);
+      if (error) {
+        throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const { currentPassword, newPassword } = input;
+
+      // Find user
+      const user = await User.findById(authUser.userId);
+      if (!user) {
+        throw new GraphQLError('User not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Verify current password
+      const validPassword = await user.comparePassword(currentPassword);
+      if (!validPassword) {
+        throw new GraphQLError('Current password is incorrect', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+
+      // Update password
+      user.password = newPassword;
+      await user.save();
+
+      return {
+        success: true,
+        message: 'Password has been changed successfully.',
       };
     },
 

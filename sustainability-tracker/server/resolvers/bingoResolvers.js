@@ -121,43 +121,32 @@ const bingoResolvers = {
               const user = await User.findById(entry.userId).select('firstName lastName username profilePicture city state company');
               
               return {
-                ...entry,
+                userId: entry.userId,
+                fullName: user ? `${user.firstName} ${user.lastName}` : 'Unknown User',
+                profilePicture: user?.profilePicture || null,
+                location: user ? (user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null) : null,
+                company: user?.company || null,
+                totalPoints: entry.totalPoints,
+                completedItemsCount: entry.completedItemsCount,
+                bingosCount: entry.bingosCount,
                 rank: index + 1,
-                user: user ? {
-                  id: user._id,
-                  firstName: user.firstName,
-                  lastName: user.lastName,
-                  fullName: `${user.firstName} ${user.lastName}`,
-                  username: user.username,
-                  profilePicture: user.profilePicture,
-                  location: user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null,
-                  company: user.company,
-                } : {
-                  id: entry.userId,
-                  firstName: 'Unknown',
-                  lastName: 'User',
-                  fullName: 'Unknown User',
-                  username: 'unknown',
-                  profilePicture: null,
-                  location: null,
-                  company: null,
-                }
+                isCompleted: entry.isCompleted,
+                gameCompletedAt: entry.gameCompletedAt?.toISOString() || null,
               };
             } catch (userError) {
               console.error(`Failed to fetch user ${entry.userId}:`, userError);
               return {
-                ...entry,
+                userId: entry.userId,
+                fullName: 'Unknown User',
+                profilePicture: null,
+                location: null,
+                company: null,
+                totalPoints: entry.totalPoints,
+                completedItemsCount: entry.completedItemsCount,
+                bingosCount: entry.bingosCount,
                 rank: index + 1,
-                user: {
-                  id: entry.userId,
-                  firstName: 'Unknown',
-                  lastName: 'User',
-                  fullName: 'Unknown User',
-                  username: 'unknown',
-                  profilePicture: null,
-                  location: null,
-                  company: null,
-                }
+                isCompleted: entry.isCompleted,
+                gameCompletedAt: entry.gameCompletedAt?.toISOString() || null,
               };
             }
           })

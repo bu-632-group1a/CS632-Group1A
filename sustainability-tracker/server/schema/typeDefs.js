@@ -40,6 +40,20 @@ export const typeDefs = gql`
     password: String!
   }
 
+  input ForgotPasswordInput {
+    email: String!
+  }
+
+  input ResetPasswordInput {
+    token: String!
+    newPassword: String!
+  }
+
+  input ChangePasswordInput {
+    currentPassword: String!
+    newPassword: String!
+  }
+
   input UpdateProfileInput {
     profilePicture: String!
   }
@@ -62,6 +76,11 @@ export const typeDefs = gql`
   type TokenPayload {
     accessToken: String!
     refreshToken: String!
+  }
+
+  type PasswordResetResponse {
+    success: Boolean!
+    message: String!
   }
 
   type SustainabilityAction {
@@ -123,8 +142,11 @@ export const typeDefs = gql`
   }
 
   type LeaderboardEntry {
-    userId: String
-    user: User
+    userId: String!
+    fullName: String!
+    profilePicture: String
+    location: String
+    company: String
     totalActions: Int!
     totalImpact: Float!
     averageImpact: Float!
@@ -214,7 +236,10 @@ export const typeDefs = gql`
 
   type BingoLeaderboardEntry {
     userId: String!
-    user: User
+    fullName: String!
+    profilePicture: String
+    location: String
+    company: String
     totalPoints: Int!
     completedItemsCount: Int!
     bingosCount: Int!
@@ -268,6 +293,9 @@ export const typeDefs = gql`
   type Mutation {
     register(input: RegisterInput!): AuthPayload!
     login(input: LoginInput!): AuthPayload!
+    forgotPassword(input: ForgotPasswordInput!): PasswordResetResponse!
+    resetPassword(input: ResetPasswordInput!): PasswordResetResponse!
+    changePassword(input: ChangePasswordInput!): PasswordResetResponse!
     refreshToken(refreshToken: String!): TokenPayload!
     logout(refreshToken: String!): Boolean!
     updateProfilePicture(input: UpdateProfileInput!): User!

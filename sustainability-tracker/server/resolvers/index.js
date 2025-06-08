@@ -166,29 +166,18 @@ const resolvers = {
                 },
               ]);
 
+              // Return the properly structured response
               return {
-                ...entry,
-                rank: index + 1,
+                userId: entry.userId,
+                fullName: user ? `${user.firstName} ${user.lastName}` : (entry.userId.includes(' ') ? entry.userId : 'Unknown User'),
+                profilePicture: user?.profilePicture || null,
+                location: user ? (user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null) : null,
+                company: user?.company || null,
+                totalActions: entry.totalActions,
+                totalImpact: entry.totalImpact,
+                averageImpact: entry.averageImpact,
                 actionsByType,
-                user: user ? {
-                  id: user._id,
-                  firstName: user.firstName,
-                  lastName: user.lastName,
-                  fullName: `${user.firstName} ${user.lastName}`,
-                  username: user.username,
-                  profilePicture: user.profilePicture,
-                  location: user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null,
-                  company: user.company,
-                } : {
-                  id: entry.userId,
-                  firstName: entry.userId.includes(' ') ? entry.userId.split(' ')[0] : 'Unknown',
-                  lastName: entry.userId.includes(' ') ? entry.userId.split(' ').slice(1).join(' ') : 'User',
-                  fullName: entry.userId.includes(' ') ? entry.userId : 'Unknown User',
-                  username: entry.userId.toLowerCase().replace(/\s+/g, ''),
-                  profilePicture: null,
-                  location: null,
-                  company: null,
-                }
+                rank: index + 1,
               };
             } catch (error) {
               console.error(`Failed to process leaderboard entry for userId ${entry.userId}:`, error);
@@ -212,19 +201,16 @@ const resolvers = {
               ]);
 
               return {
-                ...entry,
-                rank: index + 1,
+                userId: entry.userId,
+                fullName: entry.userId.includes(' ') ? entry.userId : 'Unknown User',
+                profilePicture: null,
+                location: null,
+                company: null,
+                totalActions: entry.totalActions,
+                totalImpact: entry.totalImpact,
+                averageImpact: entry.averageImpact,
                 actionsByType,
-                user: {
-                  id: entry.userId,
-                  firstName: entry.userId.includes(' ') ? entry.userId.split(' ')[0] : 'Unknown',
-                  lastName: entry.userId.includes(' ') ? entry.userId.split(' ').slice(1).join(' ') : 'User',
-                  fullName: entry.userId.includes(' ') ? entry.userId : 'Unknown User',
-                  username: entry.userId.toLowerCase().replace(/\s+/g, ''),
-                  profilePicture: null,
-                  location: null,
-                  company: null,
-                }
+                rank: index + 1,
               };
             }
           })

@@ -152,6 +152,52 @@ const updateUserProfileSchema = Joi.object({
     }),
 });
 
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'string.email': 'Please enter a valid email address',
+      'any.required': 'Email is required',
+    }),
+});
+
+const resetPasswordSchema = Joi.object({
+  token: Joi.string()
+    .required()
+    .messages({
+      'any.required': 'Reset token is required',
+    }),
+
+  newPassword: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .required()
+    .messages({
+      'string.min': 'Password must be at least 8 characters long',
+      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+      'any.required': 'New password is required',
+    }),
+});
+
+const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string()
+    .required()
+    .messages({
+      'any.required': 'Current password is required',
+    }),
+
+  newPassword: Joi.string()
+    .min(8)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .required()
+    .messages({
+      'string.min': 'Password must be at least 8 characters long',
+      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+      'any.required': 'New password is required',
+    }),
+});
+
 export const validateRegister = (input) => {
   return registerSchema.validate(input, { abortEarly: false });
 };
@@ -166,4 +212,16 @@ export const validateProfilePicture = (input) => {
 
 export const validateUpdateUserProfile = (input) => {
   return updateUserProfileSchema.validate(input, { abortEarly: false });
+};
+
+export const validateForgotPassword = (input) => {
+  return forgotPasswordSchema.validate(input, { abortEarly: false });
+};
+
+export const validateResetPassword = (input) => {
+  return resetPasswordSchema.validate(input, { abortEarly: false });
+};
+
+export const validateChangePassword = (input) => {
+  return changePasswordSchema.validate(input, { abortEarly: false });
 };
