@@ -117,7 +117,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
           grid-cols-4 
           gap-2 sm:gap-3 md:gap-4
           w-full 
-          max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg
+          max-w-xs sm:max-w-sm md:max-w-lg lg:max-w-2xl
           mx-auto 
           p-1 sm:p-2 md:p-4
           bg-white 
@@ -134,11 +134,12 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
             className={`
               w-full 
               aspect-auto md:aspect-square
-              min-h-[64px] sm:min-h-[80px] md:min-h-[96px]
+              min-h-[64px] sm:min-h-[80px] md:min-h-[120px] lg:min-h-[160px]
+              min-w-[64px] sm:min-w-[80px] md:min-w-[120px] lg:min-w-[160px]
               flex items-center justify-center 
               p-2 sm:p-3 md:p-4 
               rounded-lg text-center 
-              text-sm sm:text-base md:text-lg
+              text-xs sm:text-sm md:text-base lg:text-lg
               break-words whitespace-normal
               ${item.completed 
                 ? 'bg-primary-100 border-2 border-primary-500 text-primary-800 shadow-md' 
