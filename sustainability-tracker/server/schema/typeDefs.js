@@ -93,7 +93,6 @@ export const typeDefs = gql`
     actionType: ActionType!
     description: String
     impactScore: Float!
-    userId: String!
     performedAt: String!
     createdAt: String!
     updatedAt: String!

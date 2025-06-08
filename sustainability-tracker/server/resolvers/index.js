@@ -298,7 +298,7 @@ const resolvers = {
         // Use the authenticated user's ID instead of the input userId
         const newAction = new SustainabilityAction({
           ...input,
-          userId: input.userId || authUser.userId,
+          userId: authUser.userId,
           performedAt: new Date(input.performedAt),
         });   
            
