@@ -28,18 +28,7 @@ const actionTypes = [
   { value: 'ENERGY_SAVING', label: 'Saved Energy' },
   { value: 'WATER_CONSERVATION', label: 'Conserved Water' },
   { value: 'WASTE_REDUCTION', label: 'Reduced Waste' },
-  { value: 'HOME_ENERGY_EFFICIENCY', label: 'Home Energy Efficiency' },
-  { value: 'SUSTAINABLE_FOOD', label: 'Chose Sustainable Food' },
-  { value: 'BIKE_WALK', label: 'Biked or Walked' },
-  { value: 'RENEWABLE_ENERGY', label: 'Used Renewable Energy' },
-  { value: 'ECO_FRIENDLY_PRODUCTS', label: 'Used Eco-Friendly Products' },
-  { value: 'CARBON_OFFSET', label: 'Purchased Carbon Offset' },
-  { value: 'PLANT_BASED_MEAL', label: 'Ate Plant-Based Meal' },
-  { value: 'REPAIR_REUSE', label: 'Repaired or Reused Item' },
-  { value: 'GREEN_TRANSPORTATION', label: 'Used Green Transportation' },
-  { value: 'SUSTAINABLE_SHOPPING', label: 'Sustainable Shopping' },
-  { value: 'ENVIRONMENTAL_EDUCATION', label: 'Environmental Education' },
-  { value: 'OTHER', label: 'Other Sustainable Action' },
+  { value: 'OTHER', label: 'Describe' },
 ];
 
 const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
