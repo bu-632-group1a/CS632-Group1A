@@ -115,12 +115,11 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
         className="
           grid 
           grid-cols-4 
-          gap-3 
+          gap-2 sm:gap-3 md:gap-4
           w-full 
-          max-w-sm 
-          sm:max-w-md 
+          max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg
           mx-auto 
-          p-2 
+          p-1 sm:p-2 md:p-4
           bg-white 
           rounded-xl 
           shadow-soft-lg
@@ -133,9 +132,15 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
           <motion.button
             key={item.id}
             className={`
-              w-full h-full aspect-square min-w-[72px] min-h-[72px] sm:min-w-[96px] sm:min-h-[96px]
+              w-full h-full aspect-square 
+              min-w-[56px] min-h-[56px] 
+              sm:min-w-[72px] sm:min-h-[72px] 
+              md:min-w-[96px] md:min-h-[96px]
               flex items-center justify-center 
-              p-2 sm:p-3 rounded-lg text-center text-sm sm:text-base break-words whitespace-normal
+              p-1 sm:p-2 md:p-3 
+              rounded-lg text-center 
+              text-xs sm:text-sm md:text-base 
+              break-words whitespace-normal
               ${item.completed 
                 ? 'bg-primary-100 border-2 border-primary-500 text-primary-800 shadow-md' 
                 : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 shadow-sm'}
