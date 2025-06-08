@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Calendar, Users, Badge, Award, ArrowRight, LogIn, BarChart2,
@@ -11,6 +11,9 @@ import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import SessionCard from '../components/sessions/SessionCard';
+import { useApolloClient } from '@apollo/client';
+import { GET_SUSTAINABILITY_ACTIONS } from '../graphql/queries';
+import { AdminService } from '../services/adminService';
 
 const HomePage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -98,6 +101,21 @@ const HomePage: React.FC = () => {
       }
     ])
   ];
+
+  // Warm up backend APIs on initial load
+  const apolloClient = useApolloClient();
+  useEffect(() => {
+    // Fire a dummy GraphQL query
+    apolloClient.query({
+      query: GET_SUSTAINABILITY_ACTIONS,
+      variables: { filter: { userId: 'dummy' } },
+      fetchPolicy: 'network-only',
+    }).catch(() => { /* ignore errors */ });
+
+    // Fire a dummy REST request
+    AdminService.healthCheck?.()
+      .catch(() => { /* ignore errors */ });
+  }, [apolloClient]);
 
   return (
     <div className="space-y-8">
