@@ -18,6 +18,7 @@ export const prompteUser = (user) => {
       return user;
 }
 export const generateTokens = (user) => {
+  const  promotedUser = prompteUser(user);
   const accessToken = jwt.sign(
     { 
       userId: user.id, 
