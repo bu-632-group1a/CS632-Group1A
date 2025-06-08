@@ -105,6 +105,7 @@ const resolvers = {
 
     leaderboard: async (_, { limit = 10 }) => {
       try {
+        // First, get the aggregated data
         const leaderboardData = await SustainabilityAction.aggregate([
           {
             $group: {
@@ -126,74 +127,110 @@ const resolvers = {
           { $limit: limit },
         ]);
 
-        const rankedData = leaderboardData.map((entry, index) => ({
-          ...entry,
-          rank: index + 1,
-        }));
+        // Enrich with user data and actions by type
+        const enrichedLeaderboard = await Promise.all(
+          leaderboardData.map(async (entry, index) => {
+            try {
+              // Try to find user by ID first, then by name if it's a string
+              let user = null;
+              
+              // Check if userId looks like a MongoDB ObjectId
+              if (entry.userId && entry.userId.match(/^[0-9a-fA-F]{24}$/)) {
+                user = await User.findById(entry.userId).select('firstName lastName username profilePicture city state company');
+              } else if (entry.userId && typeof entry.userId === 'string') {
+                // If it's a string that doesn't look like an ObjectId, try to find by name
+                const nameParts = entry.userId.split(' ');
+                if (nameParts.length >= 2) {
+                  user = await User.findOne({
+                    firstName: nameParts[0],
+                    lastName: nameParts.slice(1).join(' ')
+                  }).select('firstName lastName username profilePicture city state company');
+                }
+              }
 
-        // Fetch user profile information including profile pictures
-        for (const entry of rankedData) {
-          try {
-            const user = await User.findById(entry.userId).select('firstName lastName username profilePicture city state company');
-            if (user) {
-              entry.user = {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                fullName: `${user.firstName} ${user.lastName}`,
-                username: user.username,
-                profilePicture: user.profilePicture,
-                location: user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null,
-                company: user.company,
+              // Get actions by type for this user
+              const actionsByType = await SustainabilityAction.aggregate([
+                { $match: { userId: entry.userId } },
+                {
+                  $group: {
+                    _id: '$actionType',
+                    count: { $sum: 1 },
+                  },
+                },
+                {
+                  $project: {
+                    actionType: '$_id',
+                    count: 1,
+                    _id: 0,
+                  },
+                },
+              ]);
+
+              return {
+                ...entry,
+                rank: index + 1,
+                actionsByType,
+                user: user ? {
+                  id: user._id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  fullName: `${user.firstName} ${user.lastName}`,
+                  username: user.username,
+                  profilePicture: user.profilePicture,
+                  location: user.city && user.state ? `${user.city}, ${user.state}` : user.city || user.state || null,
+                  company: user.company,
+                } : {
+                  id: entry.userId,
+                  firstName: entry.userId.includes(' ') ? entry.userId.split(' ')[0] : 'Unknown',
+                  lastName: entry.userId.includes(' ') ? entry.userId.split(' ').slice(1).join(' ') : 'User',
+                  fullName: entry.userId.includes(' ') ? entry.userId : 'Unknown User',
+                  username: entry.userId.toLowerCase().replace(/\s+/g, ''),
+                  profilePicture: null,
+                  location: null,
+                  company: null,
+                }
               };
-            } else {
-              // Fallback for deleted users
-              entry.user = {
-                id: entry.userId,
-                firstName: 'Unknown',
-                lastName: 'User',
-                fullName: 'Unknown User',
-                username: 'unknown',
-                profilePicture: null,
-                location: null,
-                company: null,
+            } catch (error) {
+              console.error(`Failed to process leaderboard entry for userId ${entry.userId}:`, error);
+              
+              // Get actions by type even if user lookup fails
+              const actionsByType = await SustainabilityAction.aggregate([
+                { $match: { userId: entry.userId } },
+                {
+                  $group: {
+                    _id: '$actionType',
+                    count: { $sum: 1 },
+                  },
+                },
+                {
+                  $project: {
+                    actionType: '$_id',
+                    count: 1,
+                    _id: 0,
+                  },
+                },
+              ]);
+
+              return {
+                ...entry,
+                rank: index + 1,
+                actionsByType,
+                user: {
+                  id: entry.userId,
+                  firstName: entry.userId.includes(' ') ? entry.userId.split(' ')[0] : 'Unknown',
+                  lastName: entry.userId.includes(' ') ? entry.userId.split(' ').slice(1).join(' ') : 'User',
+                  fullName: entry.userId.includes(' ') ? entry.userId : 'Unknown User',
+                  username: entry.userId.toLowerCase().replace(/\s+/g, ''),
+                  profilePicture: null,
+                  location: null,
+                  company: null,
+                }
               };
             }
-          } catch (userError) {
-            console.error(`Failed to fetch user ${entry.userId}:`, userError);
-            entry.user = {
-              id: entry.userId,
-              firstName: 'Unknown',
-              lastName: 'User',
-              fullName: 'Unknown User',
-              username: 'unknown',
-              profilePicture: null,
-              location: null,
-              company: null,
-            };
-          }
+          })
+        );
 
-          // Fetch actions by type for this user
-          const actionsByType = await SustainabilityAction.aggregate([
-            { $match: { userId: entry.userId } },
-            {
-              $group: {
-                _id: '$actionType',
-                count: { $sum: 1 },
-              },
-            },
-            {
-              $project: {
-                actionType: '$_id',
-                count: 1,
-                _id: 0,
-              },
-            },
-          ]);
-          entry.actionsByType = actionsByType;
-        }
-
-        return rankedData;
+        return enrichedLeaderboard;
       } catch (error) {
         throw new GraphQLError(`Failed to fetch leaderboard: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
