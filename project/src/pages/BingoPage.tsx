@@ -185,7 +185,7 @@ const BingoPage: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 w-full">
         <div>
           <motion.h1 
             className="text-3xl font-bold text-gray-900 mb-1"
