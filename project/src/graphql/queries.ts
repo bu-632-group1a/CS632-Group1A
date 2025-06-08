@@ -7,7 +7,6 @@ export const CREATE_SUSTAINABILITY_ACTION = gql`
       actionType
       description
       impactScore
-      userId
       performedAt
       createdAt
       updatedAt
@@ -22,7 +21,6 @@ export const GET_SUSTAINABILITY_ACTIONS = gql`
       actionType
       description
       impactScore
-      userId
       performedAt
       createdAt
       updatedAt
