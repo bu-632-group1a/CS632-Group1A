@@ -3,7 +3,7 @@ import { pubsub } from '../index.js';
 import BingoItem from '../models/BingoItem.js';
 import BingoGame from '../models/BingoGame.js';
 import User from '../models/User.js';
-import { getAuthUser } from '../utils/auth.js';
+import { getVerifiedAuthUser, getUnverifiedAuthUser } from '../utils/auth.js';
 import { validateCreateBingoItem, validateUpdateBingoItem } from '../validators/bingoValidators.js';
 import { getProjectManagementSustainabilityBingoItems, getAlternativeProjectBingoItems } from '../utils/defaultBingoItems.js';
 
@@ -26,15 +26,6 @@ const EASY_COMPLETION_KEYWORDS = [
   'optimize',
   'efficient'
 ];
-
-// Helper function to safely get auth user (returns null if not authenticated)
-const getOptionalAuthUser = (context) => {
-  try {
-    return getAuthUser(context);
-  } catch (error) {
-    return null;
-  }
-};
 
 const bingoResolvers = {
   Query: {
@@ -64,7 +55,8 @@ const bingoResolvers = {
     },
 
     bingoGame: async (_, __, context) => {
-      const authUser = getAuthUser(context);
+      // Require email verification to access bingo game
+      const authUser = getVerifiedAuthUser(context);
       
       try {
         let game = await BingoGame.findOne({ userId: authUser.userId })
@@ -87,6 +79,10 @@ const bingoResolvers = {
         
         return game;
       } catch (error) {
+        if (error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
+          throw error;
+        }
+        
         throw new GraphQLError(`Failed to fetch bingo game: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
         });
@@ -203,7 +199,8 @@ const bingoResolvers = {
     },
 
     easyBingoItems: async (_, __, context) => {
-      const authUser = getAuthUser(context);
+      // Require email verification to access easy bingo items
+      const authUser = getVerifiedAuthUser(context);
       
       try {
         // Find user's current game
@@ -224,6 +221,10 @@ const bingoResolvers = {
 
         return easyItems;
       } catch (error) {
+        if (error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
+          throw error;
+        }
+        
         throw new GraphQLError(`Failed to fetch easy bingo items: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
         });
@@ -233,7 +234,8 @@ const bingoResolvers = {
 
   Mutation: {
     createBingoItem: async (_, { input }, context) => {
-      const authUser = getAuthUser(context);
+      // Admin operations don't require email verification, but still need authentication
+      const authUser = getUnverifiedAuthUser(context);
       
       if (authUser.role !== 'ADMIN') {
         throw new GraphQLError('Not authorized to create bingo items', {
@@ -270,7 +272,8 @@ const bingoResolvers = {
     },
 
     updateBingoItem: async (_, { id, input }, context) => {
-      const authUser = getAuthUser(context);
+      // Admin operations don't require email verification, but still need authentication
+      const authUser = getUnverifiedAuthUser(context);
       
       if (authUser.role !== 'ADMIN') {
         throw new GraphQLError('Not authorized to update bingo items', {
@@ -311,7 +314,8 @@ const bingoResolvers = {
     },
 
     toggleBingoItem: async (_, { itemId }, context) => {
-      const authUser = getAuthUser(context);
+      // Require email verification for bingo game interactions
+      const authUser = getVerifiedAuthUser(context);
 
       try {
         // Find the bingo item
@@ -393,7 +397,7 @@ const bingoResolvers = {
 
         return game;
       } catch (error) {
-        if (error.extensions?.code === 'NOT_FOUND') {
+        if (error.extensions?.code === 'NOT_FOUND' || error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
           throw error;
         }
         
@@ -404,7 +408,8 @@ const bingoResolvers = {
     },
 
     completeEasyBingoItem: async (_, __, context) => {
-      const authUser = getAuthUser(context);
+      // Require email verification for bingo game interactions
+      const authUser = getVerifiedAuthUser(context);
 
       try {
         // Find user's current game
@@ -490,7 +495,7 @@ const bingoResolvers = {
           message: `Completed easy action: ${easyItem.text}`,
         };
       } catch (error) {
-        if (error.extensions?.code === 'NOT_FOUND') {
+        if (error.extensions?.code === 'NOT_FOUND' || error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
           throw error;
         }
         
@@ -501,7 +506,8 @@ const bingoResolvers = {
     },
 
     resetBingoGame: async (_, __, context) => {
-      const authUser = getAuthUser(context);
+      // Require email verification for bingo game interactions
+      const authUser = getVerifiedAuthUser(context);
 
       try {
         const game = await BingoGame.findOne({ userId: authUser.userId });
@@ -524,7 +530,7 @@ const bingoResolvers = {
 
         return game;
       } catch (error) {
-        if (error.extensions?.code === 'NOT_FOUND') {
+        if (error.extensions?.code === 'NOT_FOUND' || error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
           throw error;
         }
         
@@ -535,7 +541,8 @@ const bingoResolvers = {
     },
 
     refreshBingoItems: async (_, __, context) => {
-      const authUser = getAuthUser(context);
+      // Admin operations don't require email verification, but still need authentication
+      const authUser = getUnverifiedAuthUser(context);
       
       if (authUser.role !== 'ADMIN') {
         throw new GraphQLError('Not authorized to refresh bingo items', {

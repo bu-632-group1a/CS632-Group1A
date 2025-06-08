@@ -128,7 +128,6 @@ export const typeDefs = gql`
     description: String
     impactScore: Float
     performedAt: String
-    userId: String!
   }
 
   input UpdateSustainabilityActionInput {
@@ -318,6 +317,7 @@ export const typeDefs = gql`
     updateProfilePicture(input: UpdateProfileInput!): User!
     updateUserProfile(input: UpdateUserProfileInput!): User!
     verifyEmail(token: String!): Boolean!
+    resendVerificationEmail: PasswordResetResponse!
     createSustainabilityAction(input: CreateSustainabilityActionInput!): SustainabilityAction!
     updateSustainabilityAction(id: ID!, input: UpdateSustainabilityActionInput!): SustainabilityAction!
     deleteSustainabilityAction(id: ID!): Boolean!

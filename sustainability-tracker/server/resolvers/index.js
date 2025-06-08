@@ -3,6 +3,7 @@ import { pubsub } from '../index.js';
 import SustainabilityAction from '../models/SustainabilityAction.js';
 import User from '../models/User.js';
 import { validateCreateAction, validateUpdateAction } from '../validators/actionValidators.js';
+import { getVerifiedAuthUser } from '../utils/auth.js';
 
 // Subscription event names
 const EVENTS = {
@@ -278,7 +279,10 @@ const resolvers = {
   },
   
   Mutation: {
-    createSustainabilityAction: async (_, { input }) => {
+    createSustainabilityAction: async (_, { input }, context) => {
+      // Require email verification for creating actions
+      const authUser = getVerifiedAuthUser(context);
+      
       try {
         const { error } = validateCreateAction(input);
         if (error) {
@@ -291,8 +295,10 @@ const resolvers = {
           input.performedAt = new Date().toISOString();
         }
         
+        // Use the authenticated user's ID instead of the input userId
         const newAction = new SustainabilityAction({
           ...input,
+          userId: authUser.userId, // Override with authenticated user's ID
           performedAt: new Date(input.performedAt),
         });
         
@@ -309,7 +315,7 @@ const resolvers = {
         
         return newAction;
       } catch (error) {
-        if (error.extensions?.code === 'BAD_USER_INPUT') {
+        if (error.extensions?.code === 'BAD_USER_INPUT' || error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
           throw error;
         }
         
@@ -319,12 +325,29 @@ const resolvers = {
       }
     },
     
-    updateSustainabilityAction: async (_, { id, input }) => {
+    updateSustainabilityAction: async (_, { id, input }, context) => {
+      // Require email verification for updating actions
+      const authUser = getVerifiedAuthUser(context);
+      
       try {
         const { error } = validateUpdateAction(input);
         if (error) {
           throw new GraphQLError(`Validation error: ${error.details[0].message}`, {
             extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
+        
+        // Check if the action belongs to the authenticated user
+        const existingAction = await SustainabilityAction.findById(id);
+        if (!existingAction) {
+          throw new GraphQLError(`Sustainability action with ID ${id} not found`, {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+        
+        if (existingAction.userId !== authUser.userId) {
+          throw new GraphQLError('You can only update your own actions', {
+            extensions: { code: 'FORBIDDEN' },
           });
         }
         
@@ -338,12 +361,6 @@ const resolvers = {
           { new: true, runValidators: true }
         );
         
-        if (!updatedAction) {
-          throw new GraphQLError(`Sustainability action with ID ${id} not found`, {
-            extensions: { code: 'NOT_FOUND' },
-          });
-        }
-        
         pubsub.publish(EVENTS.SUSTAINABILITY_ACTION_UPDATED, {
           sustainabilityActionUpdated: updatedAction,
         });
@@ -356,7 +373,9 @@ const resolvers = {
         return updatedAction;
       } catch (error) {
         if (error.extensions?.code === 'BAD_USER_INPUT' || 
-            error.extensions?.code === 'NOT_FOUND') {
+            error.extensions?.code === 'NOT_FOUND' ||
+            error.extensions?.code === 'FORBIDDEN' ||
+            error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
           throw error;
         }
         
@@ -366,15 +385,26 @@ const resolvers = {
       }
     },
     
-    deleteSustainabilityAction: async (_, { id }) => {
+    deleteSustainabilityAction: async (_, { id }, context) => {
+      // Require email verification for deleting actions
+      const authUser = getVerifiedAuthUser(context);
+      
       try {
-        const deletedAction = await SustainabilityAction.findByIdAndDelete(id);
-        
-        if (!deletedAction) {
+        // Check if the action belongs to the authenticated user
+        const existingAction = await SustainabilityAction.findById(id);
+        if (!existingAction) {
           throw new GraphQLError(`Sustainability action with ID ${id} not found`, {
             extensions: { code: 'NOT_FOUND' },
           });
         }
+        
+        if (existingAction.userId !== authUser.userId) {
+          throw new GraphQLError('You can only delete your own actions', {
+            extensions: { code: 'FORBIDDEN' },
+          });
+        }
+        
+        const deletedAction = await SustainabilityAction.findByIdAndDelete(id);
         
         pubsub.publish(EVENTS.SUSTAINABILITY_ACTION_DELETED, {
           sustainabilityActionDeleted: id,
@@ -387,7 +417,9 @@ const resolvers = {
         
         return true;
       } catch (error) {
-        if (error.extensions?.code === 'NOT_FOUND') {
+        if (error.extensions?.code === 'NOT_FOUND' || 
+            error.extensions?.code === 'FORBIDDEN' ||
+            error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
           throw error;
         }
         

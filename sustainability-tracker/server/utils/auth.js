@@ -95,6 +95,28 @@ export const getAuthUser = (context) => {
   return decodedToken;
 };
 
+// New function to get authenticated user and enforce email verification
+export const getVerifiedAuthUser = (context) => {
+  const authUser = getAuthUser(context);
+  
+  // Check if email is verified
+  if (!authUser.isEmailVerified) {
+    throw new GraphQLError('Email verification required. Please check your email and verify your account before accessing this feature.', {
+      extensions: { 
+        code: 'EMAIL_NOT_VERIFIED',
+        requiresEmailVerification: true 
+      },
+    });
+  }
+  
+  return authUser;
+};
+
+// Function to get auth user without email verification requirement (for certain operations)
+export const getUnverifiedAuthUser = (context) => {
+  return getAuthUser(context);
+};
+
 export const checkRole = (user, requiredRole) => {
   if (user.role !== requiredRole) {
     throw new GraphQLError('Not authorized', {

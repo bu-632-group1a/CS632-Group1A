@@ -10,13 +10,14 @@ import {
   validateResetPassword,
   validateChangePassword
 } from '../validators/userValidators.js';
-import { generateTokens, verifyRefreshToken, getAuthUser } from '../utils/auth.js';
+import { generateTokens, verifyRefreshToken, getUnverifiedAuthUser, getVerifiedAuthUser } from '../utils/auth.js';
 import { sendVerificationEmail, sendPasswordResetEmail, sendPasswordResetConfirmationEmail, testEmailConfiguration } from '../utils/email.js';
 
 const userResolvers = {
   Query: {
     me: async (_, __, context) => {
-      const authUser = getAuthUser(context);
+      // Allow unverified users to access their profile (so they can see verification status)
+      const authUser = getUnverifiedAuthUser(context);
       
       const user = await User.findById(authUser.userId);
       if (!user) {
@@ -29,7 +30,8 @@ const userResolvers = {
     },
     
     users: async (_, __, context) => {
-      const authUser = getAuthUser(context);
+      // Admin operations don't require email verification, but still need authentication
+      const authUser = getUnverifiedAuthUser(context);
       if (authUser.role !== 'ADMIN') {
         throw new GraphQLError('Not authorized', {
           extensions: { code: 'FORBIDDEN' },
@@ -82,6 +84,7 @@ const userResolvers = {
         state: state || undefined,
         company: company || undefined,
         role: 'USER',
+        isEmailVerified: false, // Explicitly set to false
       });
 
       // Generate email verification token
@@ -136,7 +139,7 @@ const userResolvers = {
         });
       }
 
-      // Generate tokens
+      // Generate tokens (allow login even if email is not verified)
       const { accessToken, refreshToken } = generateTokens(user);
 
       // Add refresh token to user
@@ -279,7 +282,8 @@ const userResolvers = {
     },
 
     changePassword: async (_, { input }, context) => {
-      const authUser = getAuthUser(context);
+      // Allow unverified users to change their password
+      const authUser = getUnverifiedAuthUser(context);
       
       const { error } = validateChangePassword(input);
       if (error) {
@@ -317,7 +321,8 @@ const userResolvers = {
     },
 
     updateProfilePicture: async (_, { input }, context) => {
-      const authUser = getAuthUser(context);
+      // Allow unverified users to update their profile picture
+      const authUser = getUnverifiedAuthUser(context);
       
       const { error } = validateProfilePicture(input);
       if (error) {
@@ -340,7 +345,8 @@ const userResolvers = {
     },
 
     updateUserProfile: async (_, { input }, context) => {
-      const authUser = getAuthUser(context);
+      // Allow unverified users to update their profile
+      const authUser = getUnverifiedAuthUser(context);
       
       const { error } = validateUpdateUserProfile(input);
       if (error) {
@@ -370,29 +376,101 @@ const userResolvers = {
     },
 
     verifyEmail: async (_, { token }) => {
-      const user = await User.findOne({
-        emailVerificationExpires: { $gt: Date.now() },
-      });
+      try {
+        // Find all users with non-expired verification tokens
+        const users = await User.find({
+          emailVerificationExpires: { $gt: Date.now() },
+          emailVerificationToken: { $exists: true }
+        });
 
-      if (!user) {
-        throw new GraphQLError('Invalid or expired verification token', {
-          extensions: { code: 'BAD_USER_INPUT' },
+        // Find the user with the matching token
+        let matchingUser = null;
+        for (const user of users) {
+          if (user.verifyEmailToken(token)) {
+            matchingUser = user;
+            break;
+          }
+        }
+
+        if (!matchingUser) {
+          throw new GraphQLError('Invalid or expired verification token', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
+
+        // Mark email as verified and clear verification token
+        matchingUser.isEmailVerified = true;
+        matchingUser.emailVerificationToken = undefined;
+        matchingUser.emailVerificationExpires = undefined;
+        await matchingUser.save();
+
+        return true;
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        
+        console.error('❌ Email verification error:', error);
+        throw new GraphQLError('An error occurred while verifying your email. Please try again.', {
+          extensions: { code: 'INTERNAL_ERROR' },
         });
       }
+    },
 
-      const isValidToken = user.verifyEmailToken(token);
-      if (!isValidToken) {
-        throw new GraphQLError('Invalid verification token', {
-          extensions: { code: 'BAD_USER_INPUT' },
+    resendVerificationEmail: async (_, __, context) => {
+      // Allow unverified users to resend verification email
+      const authUser = getUnverifiedAuthUser(context);
+      
+      try {
+        const user = await User.findById(authUser.userId);
+        if (!user) {
+          throw new GraphQLError('User not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        if (user.isEmailVerified) {
+          throw new GraphQLError('Email is already verified', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
+
+        // Generate new verification token
+        const verificationToken = user.generateEmailVerificationToken();
+        await user.save();
+
+        // Send verification email
+        try {
+          await sendVerificationEmail(user.email, verificationToken);
+          console.log(`✅ Verification email resent to ${user.email}`);
+          
+          return {
+            success: true,
+            message: 'Verification email has been sent. Please check your inbox.',
+          };
+        } catch (emailError) {
+          console.error('❌ Failed to resend verification email:', emailError.message);
+          
+          if (emailError.message.includes('Email service not configured')) {
+            throw new GraphQLError('Email service is not configured. Please contact the administrator.', {
+              extensions: { code: 'EMAIL_CONFIG_ERROR' },
+            });
+          }
+          
+          throw new GraphQLError('Failed to send verification email. Please try again later.', {
+            extensions: { code: 'EMAIL_ERROR' },
+          });
+        }
+      } catch (error) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        
+        console.error('❌ Resend verification email error:', error);
+        throw new GraphQLError('An error occurred while sending verification email. Please try again.', {
+          extensions: { code: 'INTERNAL_ERROR' },
         });
       }
-
-      user.isEmailVerified = true;
-      user.emailVerificationToken = undefined;
-      user.emailVerificationExpires = undefined;
-      await user.save();
-
-      return true;
     },
 
     refreshToken: async (_, { refreshToken }) => {
@@ -433,7 +511,8 @@ const userResolvers = {
     },
 
     logout: async (_, { refreshToken }, context) => {
-      const authUser = getAuthUser(context);
+      // Allow unverified users to logout
+      const authUser = getUnverifiedAuthUser(context);
       
       const user = await User.findById(authUser.userId);
       if (!user) {
