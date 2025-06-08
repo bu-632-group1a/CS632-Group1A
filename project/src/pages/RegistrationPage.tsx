@@ -6,6 +6,7 @@ import Card, { CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
+import Modal from '../components/ui/Modal'; // Make sure you have a Modal component
 
 const RegistrationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const RegistrationPage: React.FC = () => {
     state: '',
     company: ''
   });
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -133,9 +135,9 @@ const RegistrationPage: React.FC = () => {
         state: formData.state.trim() || undefined,
         company: formData.company.trim() || undefined
       });
-      
-      // Navigate to home page on successful registration
-      navigate('/', { replace: true });
+
+      // Show verify email modal instead of redirecting immediately
+      setShowVerifyModal(true);
     } catch (err: any) {
       console.error('Registration error:', err);
       
@@ -516,6 +518,31 @@ const RegistrationPage: React.FC = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {showVerifyModal && (
+        <Modal onClose={() => {
+          setShowVerifyModal(false);
+          navigate('/login', { replace: true });
+        }}>
+          <div className="p-6 text-center">
+            <Mail size={48} className="mx-auto text-primary-600 mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Verify Your Email</h2>
+            <p className="mb-4 text-gray-700">
+              Registration successful! Please check your email and click the verification link to activate your account before signing in.
+            </p>
+            <Button
+              fullWidth
+              size="lg"
+              onClick={() => {
+                setShowVerifyModal(false);
+                navigate('/login', { replace: true });
+              }}
+            >
+              Go to Sign In
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
