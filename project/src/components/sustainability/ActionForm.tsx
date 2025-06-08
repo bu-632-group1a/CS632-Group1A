@@ -34,8 +34,13 @@ const actionTypes = [
 
 const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
   const { user } = useAuth();
-  const { data: userData } = useQuery(ME);
+  const { data: userData } = useQuery(ME, {
+    skip: !user // Only execute query when user is authenticated
+  });
   const currentUser = userData?.me;
+  
+  // Use the user ID from JWT token instead of name
+  const userId = currentUser?.id || user?.id || 'anonymous';
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormInputs>();
   
@@ -45,7 +50,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
-            userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
+            userId: userId
           }
         }
       });
@@ -54,7 +59,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
-            userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
+            userId: userId
           }
         },
         data: {
@@ -68,7 +73,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       const existingMetrics = cache.readQuery({
         query: GET_SUSTAINABILITY_METRICS,
         variables: {
-          userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
+          userId: userId
         }
       });
       
@@ -76,7 +81,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         cache.writeQuery({
           query: GET_SUSTAINABILITY_METRICS,
           variables: {
-            userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
+            userId: userId
           },
           data: {
             sustainabilityMetrics: {
@@ -100,7 +105,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         variables: {
           input: {
             ...data,
-            userId: currentUser?.fullName || user?.fullName || 'Anonymous User',
+            userId: userId, // Use the actual user ID from JWT
             performedAt: new Date().toISOString(),
           },
         },

@@ -15,9 +15,12 @@ const LeaderboardPage: React.FC = () => {
   });
   const currentUser = userData?.me;
   
+  // Use the user ID from JWT token instead of name
+  const userId = currentUser?.id || user?.id;
+  
   const { data, loading, error } = useQuery(GET_LEADERBOARD, {
     variables: {
-      userId: currentUser?.fullName || user?.fullName || 'Anonymous User'
+      userId: userId
     },
     pollInterval: 30000 // Poll every 30 seconds
   });
@@ -129,7 +132,7 @@ const LeaderboardPage: React.FC = () => {
               <LeaderboardItem 
                 key={entry.userId} 
                 entry={entry}
-                isCurrentUser={currentUser ? entry.userId === currentUser.fullName : false}
+                isCurrentUser={userId ? entry.userId === userId : false}
               />
             ))}
           </div>

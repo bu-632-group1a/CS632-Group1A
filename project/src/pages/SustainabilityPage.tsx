@@ -2,24 +2,32 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@apollo/client';
 import { Leaf, BarChart2, AlertCircle } from 'lucide-react';
-import { GET_SUSTAINABILITY_ACTIONS, GET_SUSTAINABILITY_METRICS } from '../graphql/queries';
+import { GET_SUSTAINABILITY_ACTIONS, GET_SUSTAINABILITY_METRICS, ME } from '../graphql/queries';
 import ActionForm from '../components/sustainability/ActionForm';
 import ImpactAnimation from '../components/sustainability/ImpactAnimation';
 import Card, { CardContent } from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 
 const SustainabilityPage: React.FC = () => {
-  const { user } = useAuth();
-  const userId = user?.id || 'test-user';
+  const { user, isAuthenticated } = useAuth();
+  const { data: userData } = useQuery(ME, {
+    skip: !isAuthenticated // Only execute query when user is authenticated
+  });
+  const currentUser = userData?.me;
+  
+  // Use the user ID from JWT token instead of name
+  const userId = currentUser?.id || user?.id || 'anonymous';
   
   const { data: metricsData, loading: metricsLoading, error: metricsError } = useQuery(GET_SUSTAINABILITY_METRICS, {
-    variables: { userId }
+    variables: { userId },
+    skip: !userId || userId === 'anonymous'
   });
   
   const { data: actionsData, loading: actionsLoading, error: actionsError } = useQuery(GET_SUSTAINABILITY_ACTIONS, {
     variables: { 
       filter: { userId }
-    }
+    },
+    skip: !userId || userId === 'anonymous'
   });
 
   const containerVariants = {
@@ -58,6 +66,13 @@ const SustainabilityPage: React.FC = () => {
       <motion.div variants={itemVariants}>
         <h1 className="text-3xl font-bold text-gray-900 mb-1">Sustainability Impact</h1>
         <p className="text-gray-600">Track and visualize your eco-friendly actions</p>
+        {!isAuthenticated && (
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-amber-800">
+              <strong>Note:</strong> Sign in to save your sustainability actions and track your progress over time.
+            </p>
+          </div>
+        )}
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -84,7 +99,7 @@ const SustainabilityPage: React.FC = () => {
                 </div>
               ) : (
                 <ImpactAnimation
-                  score={metricsData?.sustainabilityMetrics.totalImpact || 0}
+                  score={metricsData?.sustainabilityMetrics?.totalImpact || 0}
                   maxScore={1000}
                 />
               )}
@@ -102,8 +117,8 @@ const SustainabilityPage: React.FC = () => {
                 <div key={i} className="bg-white h-20 rounded-lg" />
               ))}
             </div>
-          ) : (
-            actionsData?.sustainabilityActions.map((action: any) => (
+          ) : actionsData?.sustainabilityActions?.length > 0 ? (
+            actionsData.sustainabilityActions.map((action: any) => (
               <motion.div
                 key={action.id}
                 className="bg-white rounded-lg p-4 shadow-soft"
@@ -132,6 +147,14 @@ const SustainabilityPage: React.FC = () => {
                 </div>
               </motion.div>
             ))
+          ) : (
+            <div className="bg-white rounded-lg p-8 text-center">
+              <Leaf className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No actions logged yet</h3>
+              <p className="text-gray-600">
+                Start logging your sustainability actions to track your environmental impact.
+              </p>
+            </div>
           )}
         </div>
       </motion.div>
