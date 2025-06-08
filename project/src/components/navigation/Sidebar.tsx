@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   Calendar, BarChart2, Bookmark, Leaf, Layout, 
   CheckSquare, BookOpen, Home, Sprout, LogIn, 
-  UserPlus, LogOut, CalendarDays
+  UserPlus, LogOut, CalendarDays, Settings
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,15 +25,21 @@ const Sidebar: React.FC = () => {
       { label: 'Manage User Profile', icon: <Layout size={20} />, path: '/profile' },
       { label: 'Session Check-In', icon: <CheckSquare size={20} />, path: '/check-in' },
       { label: 'Event Bingo Card', icon: <BookOpen size={20} />, path: '/bingo' },
-      { label: 'Sign Out', icon: <LogOut size={20} />, path: '/logout' },
     ];
 
-    const unauthenticatedItems = [
+    const adminItems = user?.role === 'ADMIN' ? [
+      { label: 'Bingo Administration', icon: <Settings size={20} />, path: '/admin/bingo' },
+    ] : [];
+
+    const authItems = isAuthenticated ? [
+      ...adminItems,
+      { label: 'Sign Out', icon: <LogOut size={20} />, path: '/logout' },
+    ] : [
       { label: 'Sign In', icon: <LogIn size={20} />, path: '/login' },
       { label: 'Sign Up', icon: <UserPlus size={20} />, path: '/signup' },
     ];
 
-    return [...commonItems, ...(isAuthenticated ? authenticatedItems : unauthenticatedItems)];
+    return [...commonItems, ...(isAuthenticated ? authenticatedItems : []), ...authItems];
   };
 
   const sidebarVariants = {
@@ -121,7 +127,7 @@ const Sidebar: React.FC = () => {
               {user.fullName}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              {user.email}
+              {user.role === 'ADMIN' ? 'Administrator' : 'User'} • {user.email}
             </p>
           </div>
         </motion.div>

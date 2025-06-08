@@ -10,6 +10,7 @@ import CalendarPage from '../pages/CalendarPage';
 import ProfilePage from '../pages/ProfilePage';
 import CheckInPage from '../pages/CheckInPage';
 import BingoPage from '../pages/BingoPage';
+import BingoAdminPage from '../pages/BingoAdminPage';
 import SustainabilityPage from '../pages/SustainabilityPage';
 import LeaderboardPage from '../pages/LeaderboardPage';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +21,21 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   
   if (!isAuthenticated) {
     return <Navigate to="/login\" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Admin route component
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, user } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login\" replace />;
+  }
+  
+  if (user?.role !== 'ADMIN') {
+    return <Navigate to="/\" replace />;
   }
   
   return <>{children}</>;
@@ -178,6 +194,16 @@ export const router = createBrowserRouter([
               <BingoPage />
             </PageWrapper>
           </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/bingo',
+        element: (
+          <AdminRoute>
+            <PageWrapper>
+              <BingoAdminPage />
+            </PageWrapper>
+          </AdminRoute>
         ),
       },
       {

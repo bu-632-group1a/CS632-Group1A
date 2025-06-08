@@ -109,6 +109,8 @@ export const UPDATE_PROFILE_PICTURE = gql`
       location
       role
       isEmailVerified
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -138,5 +140,102 @@ export const UPDATE_USER_PROFILE = gql`
 export const LOGOUT = gql`
   mutation Logout($refreshToken: String!) {
     logout(refreshToken: $refreshToken)
+  }
+`;
+
+// Bingo Mutations
+export const CREATE_BINGO_ITEM = gql`
+  mutation CreateBingoItem($input: CreateBingoItemInput!) {
+    createBingoItem(input: $input) {
+      id
+      text
+      position
+      category
+      points
+      isActive
+      createdBy
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_BINGO_ITEM = gql`
+  mutation UpdateBingoItem($id: ID!, $input: UpdateBingoItemInput!) {
+    updateBingoItem(id: $id, input: $input) {
+      id
+      text
+      position
+      category
+      points
+      isActive
+      createdBy
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const TOGGLE_BINGO_ITEM = gql`
+  mutation ToggleBingoItem($itemId: ID!) {
+    toggleBingoItem(itemId: $itemId) {
+      id
+      userId
+      completedItems {
+        item {
+          id
+          text
+          position
+          category
+          points
+          isActive
+        }
+        completedAt
+      }
+      bingosAchieved {
+        type
+        pattern
+        achievedAt
+        pointsAwarded
+      }
+      totalPoints
+      isCompleted
+      gameStartedAt
+      gameCompletedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const RESET_BINGO_GAME = gql`
+  mutation ResetBingoGame {
+    resetBingoGame {
+      id
+      userId
+      completedItems {
+        item {
+          id
+          text
+          position
+          category
+          points
+          isActive
+        }
+        completedAt
+      }
+      bingosAchieved {
+        type
+        pattern
+        achievedAt
+        pointsAwarded
+      }
+      totalPoints
+      isCompleted
+      gameStartedAt
+      gameCompletedAt
+      createdAt
+      updatedAt
+    }
   }
 `;

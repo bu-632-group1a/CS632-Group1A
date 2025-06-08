@@ -66,3 +66,77 @@ export const ME = gql`
     }
   }
 `;
+
+// Bingo Queries
+export const GET_BINGO_ITEMS = gql`
+  query GetBingoItems {
+    bingoItems {
+      id
+      text
+      position
+      category
+      points
+      isActive
+      createdBy
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_BINGO_GAME = gql`
+  query GetBingoGame {
+    bingoGame {
+      id
+      userId
+      completedItems {
+        item {
+          id
+          text
+          position
+          category
+          points
+          isActive
+        }
+        completedAt
+      }
+      bingosAchieved {
+        type
+        pattern
+        achievedAt
+        pointsAwarded
+      }
+      totalPoints
+      isCompleted
+      gameStartedAt
+      gameCompletedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_BINGO_LEADERBOARD = gql`
+  query GetBingoLeaderboard($limit: Int) {
+    bingoLeaderboard(limit: $limit) {
+      userId
+      totalPoints
+      completedItemsCount
+      bingosCount
+      rank
+      isCompleted
+      gameCompletedAt
+    }
+  }
+`;
+
+export const GET_BINGO_STATS = gql`
+  query GetBingoStats {
+    bingoStats {
+      totalGames
+      completedGames
+      totalBingos
+      averageCompletionRate
+    }
+  }
+`;

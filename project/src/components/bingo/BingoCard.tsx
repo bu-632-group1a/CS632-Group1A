@@ -1,14 +1,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useMutation } from '@apollo/client';
 import { BingoItem } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { TOGGLE_BINGO_ITEM } from '../../graphql/mutations';
+import { GET_BINGO_GAME } from '../../graphql/queries';
 
 interface BingoCardProps {
   items: BingoItem[];
 }
 
 const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
-  const { toggleBingoItem } = useApp();
+  const [toggleBingoItem, { loading }] = useMutation(TOGGLE_BINGO_ITEM, {
+    refetchQueries: [{ query: GET_BINGO_GAME }],
+    onError: (error) => {
+      console.error('Error toggling bingo item:', error);
+    }
+  });
   
   const gridVariants = {
     hidden: { opacity: 0 },
@@ -75,6 +82,18 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
     return false;
   };
 
+  const handleToggleItem = async (itemId: string) => {
+    if (loading) return;
+    
+    try {
+      await toggleBingoItem({
+        variables: { itemId }
+      });
+    } catch (error) {
+      // Error is handled by onError callback
+    }
+  };
+
   const bingoAchieved = hasBingo();
 
   return (
@@ -98,7 +117,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
         initial="hidden"
         animate="visible"
       >
-        {items.map((item) => (
+        {items.map((item, index) => (
           <motion.button
             key={item.id}
             className={`
@@ -106,15 +125,20 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
               ${item.completed 
                 ? 'bg-primary-100 border-2 border-primary-500 text-primary-800' 
                 : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700'}
-              transition-colors
+              transition-colors disabled:opacity-50 disabled:cursor-not-allowed
             `}
-            onClick={() => toggleBingoItem(item.id)}
+            onClick={() => handleToggleItem(item.id)}
             variants={itemVariants}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: loading ? 1 : 1.05 }}
+            whileTap={{ scale: loading ? 1 : 0.95 }}
             aria-pressed={item.completed}
+            disabled={loading || item.id.startsWith('placeholder')}
           >
-            <span className="line-clamp-4">{item.text}</span>
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span className="line-clamp-4">{item.text}</span>
+            )}
           </motion.button>
         ))}
       </motion.div>
