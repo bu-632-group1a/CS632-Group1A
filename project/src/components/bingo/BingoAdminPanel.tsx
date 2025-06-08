@@ -71,9 +71,20 @@ const BingoAdminPanel: React.FC = () => {
     }
   });
 
-  const bingoItems = itemsData?.bingoItems || [];
+  // FIX: Create a mutable copy of the array before sorting
+  const bingoItems = React.useMemo(() => {
+    if (!itemsData?.bingoItems) return [];
+    // Create a shallow copy to avoid mutating the Apollo cache
+    return [...itemsData.bingoItems];
+  }, [itemsData?.bingoItems]);
+
   const stats = statsData?.bingoStats;
-  const leaderboard = leaderboardData?.bingoLeaderboard || [];
+  
+  // FIX: Create a mutable copy of the leaderboard array
+  const leaderboard = React.useMemo(() => {
+    if (!leaderboardData?.bingoLeaderboard) return [];
+    return [...leaderboardData.bingoLeaderboard];
+  }, [leaderboardData?.bingoLeaderboard]);
 
   const categories = [
     'TRANSPORT', 'ENERGY', 'WASTE', 'WATER', 
@@ -338,6 +349,7 @@ const BingoAdminPanel: React.FC = () => {
                 </div>
               ) : bingoItems.length > 0 ? (
                 <div className="space-y-3">
+                  {/* FIX: Sort the already-copied array safely */}
                   {bingoItems
                     .sort((a: any, b: any) => a.position - b.position)
                     .map((item: any) => (
