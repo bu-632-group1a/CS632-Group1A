@@ -18,8 +18,6 @@ interface FormInputs {
   description: string;
 }
 
-// Updated action types to match GraphQL schema expectations
-// These should align with the backend enum values
 const actionTypes = [
   { value: 'REUSABLE_BOTTLE', label: 'Used Reusable Bottle' },
   { value: 'PUBLIC_TRANSPORT', label: 'Used Public Transport' },
@@ -47,18 +45,20 @@ const actionTypes = [
 const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
   const { user } = useAuth();
   const { data: userData } = useQuery(ME, {
-    skip: !user // Only execute query when user is authenticated
+    skip: !user
   });
   const currentUser = userData?.me;
-  
-  // Use the user ID from JWT token instead of name
   const userId = currentUser?.id || user?.id || 'anonymous';
-  
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormInputs>();
-  
+
+  // Add types for Apollo cache reads
+  type ActionsData = { sustainabilityActions: any[] };
+  type MetricsData = { sustainabilityMetrics: { totalActions: number; totalImpact: number; [key: string]: any } };
+
   const [createAction, { loading, error }] = useMutation(CREATE_SUSTAINABILITY_ACTION, {
     update(cache, { data: { createSustainabilityAction } }) {
-      const existingActions = cache.readQuery({
+      const existingActions = cache.readQuery<ActionsData>({
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
@@ -66,8 +66,8 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
           }
         }
       });
-      
-      cache.writeQuery({
+
+      cache.writeQuery<ActionsData>({
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
@@ -77,20 +77,20 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         data: {
           sustainabilityActions: [
             createSustainabilityAction,
-            ...existingActions?.sustainabilityActions || [],
+            ...(existingActions?.sustainabilityActions || []),
           ],
         },
       });
 
-      const existingMetrics = cache.readQuery({
+      const existingMetrics = cache.readQuery<MetricsData>({
         query: GET_SUSTAINABILITY_METRICS,
         variables: {
           userId: userId
         }
       });
-      
+
       if (existingMetrics?.sustainabilityMetrics) {
-        cache.writeQuery({
+        cache.writeQuery<MetricsData>({
           query: GET_SUSTAINABILITY_METRICS,
           variables: {
             userId: userId
@@ -111,7 +111,6 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
     },
     onError: (error) => {
       console.error('Error creating sustainability action:', error);
-      // Log the specific error details for debugging
       if (error.graphQLErrors?.length > 0) {
         console.error('GraphQL Errors:', error.graphQLErrors);
       }
@@ -126,16 +125,14 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       console.log('Submitting sustainability action:', {
         actionType: data.actionType,
         description: data.description,
-        userId: userId,
         performedAt: new Date().toISOString(),
       });
 
       await createAction({
         variables: {
           input: {
-            actionType: data.actionType, // This should now match the GraphQL enum
-            description: data.description || '', // Ensure description is always a string
-            // userId: userId, // Use the actual user ID from JWT
+            actionType: data.actionType,
+            description: data.description || '',
             performedAt: new Date().toISOString(),
           },
         },
