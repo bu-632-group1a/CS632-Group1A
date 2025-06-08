@@ -27,6 +27,15 @@ const EASY_COMPLETION_KEYWORDS = [
   'efficient'
 ];
 
+// Helper function to safely get auth user (returns null if not authenticated)
+const getOptionalAuthUser = (context) => {
+  try {
+    return getAuthUser(context);
+  } catch (error) {
+    return null;
+  }
+};
+
 const bingoResolvers = {
   Query: {
     bingoItems: async () => {
@@ -84,7 +93,8 @@ const bingoResolvers = {
       }
     },
 
-    bingoLeaderboard: async (_, { limit = 10 }) => {
+    bingoLeaderboard: async (_, { limit = 10 }, context) => {
+      // Make this query public - no authentication required
       try {
         const leaderboard = await BingoGame.aggregate([
           {
@@ -161,7 +171,8 @@ const bingoResolvers = {
       }
     },
 
-    bingoStats: async () => {
+    bingoStats: async (_, __, context) => {
+      // Make this query public - no authentication required
       try {
         const totalGames = await BingoGame.countDocuments();
         const completedGames = await BingoGame.countDocuments({ isCompleted: true });
