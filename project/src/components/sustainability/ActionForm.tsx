@@ -62,7 +62,6 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
-            userId: userId
           }
         }
       });
@@ -71,7 +70,6 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
-            userId: userId
           }
         },
         data: {
@@ -85,7 +83,6 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       const existingMetrics = cache.readQuery({
         query: GET_SUSTAINABILITY_METRICS,
         variables: {
-          userId: userId
         }
       });
       
@@ -93,7 +90,6 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         cache.writeQuery({
           query: GET_SUSTAINABILITY_METRICS,
           variables: {
-            userId: userId
           },
           data: {
             sustainabilityMetrics: {

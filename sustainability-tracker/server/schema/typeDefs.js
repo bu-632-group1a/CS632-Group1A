@@ -90,6 +90,7 @@ export const typeDefs = gql`
 
   type SustainabilityAction {
     id: ID!
+    userId: String!
     actionType: ActionType!
     description: String
     impactScore: Float!
