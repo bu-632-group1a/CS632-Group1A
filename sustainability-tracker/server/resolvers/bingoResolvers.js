@@ -4,6 +4,7 @@ import BingoItem from '../models/BingoItem.js';
 import BingoGame from '../models/BingoGame.js';
 import { getAuthUser } from '../utils/auth.js';
 import { validateCreateBingoItem, validateUpdateBingoItem } from '../validators/bingoValidators.js';
+import { getProjectManagementSustainabilityBingoItems, getAlternativeProjectBingoItems } from '../utils/defaultBingoItems.js';
 
 // Subscription event names
 const BINGO_EVENTS = {
@@ -12,11 +13,39 @@ const BINGO_EVENTS = {
   BINGO_GAME_UPDATED: 'BINGO_GAME_UPDATED',
 };
 
+// Easy completion items - these are considered simple actions
+const EASY_COMPLETION_CATEGORIES = ['DIGITAL', 'ENERGY'];
+const EASY_COMPLETION_KEYWORDS = [
+  'digital',
+  'virtual',
+  'online',
+  'paperless',
+  'cloud',
+  'automate',
+  'optimize',
+  'efficient'
+];
+
 const bingoResolvers = {
   Query: {
     bingoItems: async () => {
       try {
-        return await BingoItem.find({ isActive: true }).sort({ position: 1 });
+        let items = await BingoItem.find({ isActive: true }).sort({ position: 1 });
+        
+        // If no items exist, create the default project management + sustainability items
+        if (items.length === 0) {
+          const defaultItems = getProjectManagementSustainabilityBingoItems();
+          const createdItems = await BingoItem.insertMany(
+            defaultItems.map(item => ({
+              ...item,
+              createdBy: 'system',
+              isActive: true,
+            }))
+          );
+          items = createdItems;
+        }
+        
+        return items;
       } catch (error) {
         throw new GraphQLError(`Failed to fetch bingo items: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
@@ -32,6 +61,9 @@ const bingoResolvers = {
           .populate('completedItems.itemId');
         
         if (!game) {
+          // Ensure we have bingo items before creating a game
+          await bingoResolvers.Query.bingoItems();
+          
           // Create a new game for the user
           game = new BingoGame({
             userId: authUser.userId,
@@ -118,6 +150,34 @@ const bingoResolvers = {
         };
       } catch (error) {
         throw new GraphQLError(`Failed to fetch bingo stats: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    easyBingoItems: async (_, __, context) => {
+      const authUser = getAuthUser(context);
+      
+      try {
+        // Find user's current game
+        const game = await BingoGame.findOne({ userId: authUser.userId })
+          .populate('completedItems.itemId');
+        
+        const completedItemIds = game ? game.completedItems.map(item => item.itemId._id.toString()) : [];
+        
+        // Find easy items that aren't completed yet
+        const easyItems = await BingoItem.find({
+          isActive: true,
+          _id: { $nin: completedItemIds },
+          $or: [
+            { category: { $in: EASY_COMPLETION_CATEGORIES } },
+            { text: { $regex: EASY_COMPLETION_KEYWORDS.join('|'), $options: 'i' } }
+          ]
+        }).sort({ points: 1, position: 1 }).limit(3);
+
+        return easyItems;
+      } catch (error) {
+        throw new GraphQLError(`Failed to fetch easy bingo items: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
         });
       }
@@ -296,6 +356,103 @@ const bingoResolvers = {
       }
     },
 
+    completeEasyBingoItem: async (_, __, context) => {
+      const authUser = getAuthUser(context);
+
+      try {
+        // Find user's current game
+        let game = await BingoGame.findOne({ userId: authUser.userId });
+        if (!game) {
+          game = new BingoGame({
+            userId: authUser.userId,
+            completedItems: [],
+            bingosAchieved: [],
+            totalPoints: 0,
+          });
+        }
+
+        const completedItemIds = game.completedItems.map(item => item.itemId.toString());
+
+        // Find the easiest available item
+        const easyItem = await BingoItem.findOne({
+          isActive: true,
+          _id: { $nin: completedItemIds },
+          $or: [
+            { category: { $in: EASY_COMPLETION_CATEGORIES } },
+            { text: { $regex: EASY_COMPLETION_KEYWORDS.join('|'), $options: 'i' } }
+          ]
+        }).sort({ points: 1, position: 1 });
+
+        if (!easyItem) {
+          throw new GraphQLError('No easy bingo items available to complete', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Complete the easy item
+        game.completedItems.push({
+          itemId: easyItem._id,
+          completedAt: new Date(),
+        });
+
+        // Publish item completion event
+        pubsub.publish(BINGO_EVENTS.BINGO_ITEM_COMPLETED, {
+          bingoItemCompleted: {
+            userId: authUser.userId,
+            itemId: easyItem._id,
+            item: easyItem,
+          },
+        });
+
+        // Check for new bingos
+        const newBingos = game.checkForBingos();
+        if (newBingos.length > 0) {
+          game.bingosAchieved.push(...newBingos);
+          
+          // Publish bingo achievement events
+          newBingos.forEach(bingo => {
+            pubsub.publish(BINGO_EVENTS.BINGO_ACHIEVED, {
+              bingoAchieved: {
+                userId: authUser.userId,
+                bingo,
+                game,
+              },
+            });
+          });
+        }
+
+        // Update total points and completion status
+        game.totalPoints = game.calculateTotalPoints();
+        game.isCompleted = game.completedItems.length === 16;
+        
+        if (game.isCompleted && !game.gameCompletedAt) {
+          game.gameCompletedAt = new Date();
+        }
+
+        await game.save();
+        await game.populate('completedItems.itemId');
+
+        // Publish game update event
+        pubsub.publish(BINGO_EVENTS.BINGO_GAME_UPDATED, {
+          bingoGameUpdated: game,
+        });
+
+        return {
+          game,
+          completedItem: easyItem,
+          message: `Completed easy action: ${easyItem.text}`,
+        };
+      } catch (error) {
+        if (error.extensions?.code === 'NOT_FOUND') {
+          throw error;
+        }
+        
+        throw new GraphQLError(`Failed to complete easy bingo item: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
     resetBingoGame: async (_, __, context) => {
       const authUser = getAuthUser(context);
 
@@ -325,6 +482,41 @@ const bingoResolvers = {
         }
         
         throw new GraphQLError(`Failed to reset bingo game: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
+
+    refreshBingoItems: async (_, __, context) => {
+      const authUser = getAuthUser(context);
+      
+      if (authUser.role !== 'ADMIN') {
+        throw new GraphQLError('Not authorized to refresh bingo items', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      try {
+        // Clear existing items
+        await BingoItem.deleteMany({});
+        
+        // Create new set of items (alternating between sets for variety)
+        const useAlternative = Math.random() > 0.5;
+        const newItems = useAlternative 
+          ? getAlternativeProjectBingoItems() 
+          : getProjectManagementSustainabilityBingoItems();
+        
+        const createdItems = await BingoItem.insertMany(
+          newItems.map(item => ({
+            ...item,
+            createdBy: authUser.userId,
+            isActive: true,
+          }))
+        );
+
+        return createdItems;
+      } catch (error) {
+        throw new GraphQLError(`Failed to refresh bingo items: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
         });
       }

@@ -2,8 +2,8 @@ import nodemailer from 'nodemailer';
 
 // Create transporter using environment variables
 const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
+  return nodemailer.createTransporter({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT || 587,
     secure: false, // true for 465, false for other ports
     auth: {
@@ -18,11 +18,10 @@ export const sendVerificationEmail = async (email, verificationToken) => {
     const transporter = createTransporter();
     
     const mailOptions = {
-        html: `Please verify your email address by clicking the link below`,
-        from: process.env.EMAIL_FROM,
-        to: email,
-        subject: 'Verify Your Email Address',
-        html: `
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Verify Your Email Address',
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Email Verification</h2>
           <p>Thank you for signing up! Please click the button below to verify your email address:</p>

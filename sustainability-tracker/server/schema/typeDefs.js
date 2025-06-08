@@ -240,6 +240,12 @@ export const typeDefs = gql`
     game: BingoGame!
   }
 
+  type EasyBingoCompletionResult {
+    game: BingoGame!
+    completedItem: BingoItem!
+    message: String!
+  }
+
   type Query {
     me: User!
     users: [User!]!
@@ -254,6 +260,7 @@ export const typeDefs = gql`
     bingoGame: BingoGame!
     bingoLeaderboard(limit: Int): [BingoLeaderboardEntry!]!
     bingoStats: BingoStats!
+    easyBingoItems: [BingoItem!]!
   }
 
   type Mutation {
@@ -272,7 +279,9 @@ export const typeDefs = gql`
     createBingoItem(input: CreateBingoItemInput!): BingoItem!
     updateBingoItem(id: ID!, input: UpdateBingoItemInput!): BingoItem!
     toggleBingoItem(itemId: ID!): BingoGame!
+    completeEasyBingoItem: EasyBingoCompletionResult!
     resetBingoGame: BingoGame!
+    refreshBingoItems: [BingoItem!]!
   }
 
   type Subscription {
