@@ -50,7 +50,13 @@ const BingoPage: React.FC = () => {
 
   const user = userData?.me;
   const isAdmin = user?.role === 'ADMIN';
-  const bingoItems = bingoItemsData?.bingoItems || [];
+  
+  // FIX: Create a mutable copy of the bingoItems array
+  const bingoItems = React.useMemo(() => {
+    if (!bingoItemsData?.bingoItems) return [];
+    return [...bingoItemsData.bingoItems];
+  }, [bingoItemsData?.bingoItems]);
+  
   const bingoGame = bingoGameData?.bingoGame;
 
   // Get selected game info
@@ -87,7 +93,8 @@ const BingoPage: React.FC = () => {
     }
     
     // Create a 4x4 grid (16 items) sorted by position
-    const sortedItems = [...bingoItems]
+    // FIX: Sort the already-copied array safely
+    const sortedItems = bingoItems
       .filter(item => item.isActive)
       .sort((a, b) => a.position - b.position)
       .slice(0, 16);

@@ -563,9 +563,20 @@ const BingoAdminPanel: React.FC = () => {
               ) : leaderboard.length > 0 ? (
                 <div className="space-y-3">
                   {leaderboard.map((entry: any, index: number) => {
-                    // Get display name from user object or fallback to userId
-                    const displayName = entry.user?.fullName || entry.user?.firstName || `User ${entry.userId}`;
-                    const profilePicture = entry.user?.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg';
+                    // FIXED: Get display name from multiple sources with proper fallback
+                    const displayName = entry.user?.fullName || 
+                                      entry.fullName || 
+                                      (entry.user?.firstName && entry.user?.lastName ? 
+                                        `${entry.user.firstName} ${entry.user.lastName}` : 
+                                        entry.user?.firstName) ||
+                                      `User ${entry.userId}`;
+                    
+                    const profilePicture = entry.user?.profilePicture || 
+                                         entry.profilePicture || 
+                                         'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg';
+                    
+                    const location = entry.user?.location || entry.location;
+                    const company = entry.user?.company || entry.company;
                     
                     return (
                       <div
@@ -586,9 +597,14 @@ const BingoAdminPanel: React.FC = () => {
                             />
                             <div>
                               <p className="font-medium text-gray-900">{displayName}</p>
-                              <p className="text-sm text-gray-500">
-                                {entry.completedItemsCount} items • {entry.bingosCount} bingos
-                              </p>
+                              <div className="text-sm text-gray-500">
+                                <span>{entry.completedItemsCount} items • {entry.bingosCount} bingos</span>
+                                {(location || company) && (
+                                  <span className="ml-2">
+                                    • {[company, location].filter(Boolean).join(', ')}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -598,6 +614,11 @@ const BingoAdminPanel: React.FC = () => {
                           </div>
                           {entry.isCompleted && (
                             <Badge variant="success" size="sm">Completed</Badge>
+                          )}
+                          {entry.gameCompletedAt && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Completed {new Date(entry.gameCompletedAt).toLocaleDateString()}
+                            </div>
                           )}
                         </div>
                       </div>

@@ -67,6 +67,24 @@ export const REGISTER = gql`
   }
 `;
 
+export const FORGOT_PASSWORD = gql`
+  mutation ForgotPassword($input: ForgotPasswordInput!) {
+    forgotPassword(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
+export const RESET_PASSWORD = gql`
+  mutation ResetPassword($input: ResetPasswordInput!) {
+    resetPassword(input: $input) {
+      success
+      message
+    }
+  }
+`;
+
 export const REFRESH_TOKEN = gql`
   mutation RefreshToken($refreshToken: String!) {
     refreshToken(refreshToken: $refreshToken) {

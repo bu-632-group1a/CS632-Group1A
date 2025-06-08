@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, LogIn, Home, UserPlus, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Mail, Lock, LogIn, Home, UserPlus, ArrowLeft, ArrowRight, KeyRound, CheckCircle } from 'lucide-react';
+import { useMutation } from '@apollo/client';
 import Card, { CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
+import { FORGOT_PASSWORD } from '../graphql/mutations';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
   
   const { login, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -19,6 +24,21 @@ const LoginPage: React.FC = () => {
 
   // Get redirect URL from query params
   const redirectUrl = searchParams.get('redirect');
+
+  const [forgotPassword, { loading: resetLoading }] = useMutation(FORGOT_PASSWORD, {
+    onCompleted: (data) => {
+      if (data.forgotPassword.success) {
+        setResetSuccess(true);
+        setError('');
+      } else {
+        setError(data.forgotPassword.message || 'Failed to send reset email');
+      }
+    },
+    onError: (error) => {
+      console.error('Password reset error:', error);
+      setError('Failed to send reset email. Please try again.');
+    }
+  });
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -80,9 +100,43 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!resetEmail.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+    
+    if (!validateEmail(resetEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      await forgotPassword({
+        variables: {
+          input: {
+            email: resetEmail.trim().toLowerCase()
+          }
+        }
+      });
+    } catch (err) {
+      // Error handled by onError callback
+    }
+  };
+
   const handleBackToEmail = () => {
     setCurrentStep(1);
     setPassword('');
+    setError('');
+  };
+
+  const handleBackToLogin = () => {
+    setShowPasswordReset(false);
+    setResetEmail('');
+    setResetSuccess(false);
     setError('');
   };
 
@@ -101,9 +155,16 @@ const LoginPage: React.FC = () => {
       >
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {showPasswordReset ? 'Reset Password' : 'Welcome Back'}
+            </h1>
             <p className="text-gray-600">
-              {redirectUrl ? 'Sign in to continue to your destination' : 'Sign in to continue your conference journey'}
+              {showPasswordReset 
+                ? 'Enter your email to receive a password reset link'
+                : redirectUrl 
+                  ? 'Sign in to continue to your destination' 
+                  : 'Sign in to continue your conference journey'
+              }
             </p>
           </div>
           <Link to="/">
@@ -118,7 +179,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Show redirect notice if coming from QR code */}
-        {redirectUrl && (
+        {redirectUrl && !showPasswordReset && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -137,31 +198,33 @@ const LoginPage: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Progress Indicator */}
-        <div className="mb-6">
-          <div className="flex items-center justify-center space-x-4">
-            <div className={`
-              w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-              ${currentStep >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-600'}
-            `}>
-              1
+        {/* Progress Indicator - Only show for login flow */}
+        {!showPasswordReset && (
+          <div className="mb-6">
+            <div className="flex items-center justify-center space-x-4">
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                ${currentStep >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-600'}
+              `}>
+                1
+              </div>
+              <div className={`
+                h-1 w-12 rounded
+                ${currentStep >= 2 ? 'bg-primary-600' : 'bg-gray-200'}
+              `} />
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                ${currentStep >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-600'}
+              `}>
+                2
+              </div>
             </div>
-            <div className={`
-              h-1 w-12 rounded
-              ${currentStep >= 2 ? 'bg-primary-600' : 'bg-gray-200'}
-            `} />
-            <div className={`
-              w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-              ${currentStep >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-600'}
-            `}>
-              2
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <span className={currentStep >= 1 ? 'text-primary-600 font-medium' : ''}>Email</span>
+              <span className={currentStep >= 2 ? 'text-primary-600 font-medium' : ''}>Password</span>
             </div>
           </div>
-          <div className="flex justify-between mt-2 text-xs text-gray-500">
-            <span className={currentStep >= 1 ? 'text-primary-600 font-medium' : ''}>Email</span>
-            <span className={currentStep >= 2 ? 'text-primary-600 font-medium' : ''}>Password</span>
-          </div>
-        </div>
+        )}
         
         <Card>
           <CardContent className="p-6">
@@ -177,8 +240,96 @@ const LoginPage: React.FC = () => {
             )}
 
             <AnimatePresence mode="wait">
-              {/* Step 1: Email */}
-              {currentStep === 1 && (
+              {/* Password Reset Flow */}
+              {showPasswordReset && (
+                <motion.div
+                  key="password-reset"
+                  variants={stepVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  transition={{ duration: 0.3 }}
+                >
+                  {resetSuccess ? (
+                    <div className="text-center">
+                      <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle size={24} className="text-green-600" />
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+                      <p className="text-gray-600 mb-6">
+                        We've sent a password reset link to <strong>{resetEmail}</strong>. 
+                        Please check your email and follow the instructions to reset your password.
+                      </p>
+                      <div className="space-y-3">
+                        <Button
+                          onClick={handleBackToLogin}
+                          variant="primary"
+                          fullWidth
+                          icon={<ArrowLeft size={20} />}
+                        >
+                          Back to Sign In
+                        </Button>
+                        <p className="text-sm text-gray-500">
+                          Didn't receive the email? Check your spam folder or try again.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-center mb-6">
+                        <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <KeyRound size={24} className="text-primary-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">Forgot Your Password?</h2>
+                        <p className="text-gray-600">
+                          No worries! Enter your email address and we'll send you a link to reset your password.
+                        </p>
+                      </div>
+
+                      <form onSubmit={handlePasswordReset} className="space-y-4">
+                        <Input
+                          label="Email Address"
+                          type="email"
+                          id="reset-email"
+                          fullWidth
+                          placeholder="you@example.com"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          required
+                          icon={<Mail size={18} />}
+                          autoFocus
+                        />
+                        
+                        <div className="flex gap-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="lg"
+                            onClick={handleBackToLogin}
+                            icon={<ArrowLeft size={20} />}
+                            className="flex-shrink-0"
+                          >
+                            Back
+                          </Button>
+                          <Button
+                            type="submit"
+                            fullWidth
+                            size="lg"
+                            isLoading={resetLoading}
+                            icon={<Mail size={20} />}
+                            disabled={!resetEmail.trim() || !validateEmail(resetEmail)}
+                          >
+                            Send Reset Link
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Step 1: Email - Only show if not in password reset mode */}
+              {!showPasswordReset && currentStep === 1 && (
                 <motion.div
                   key="email-step"
                   variants={stepVariants}
@@ -223,8 +374,8 @@ const LoginPage: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Step 2: Password */}
-              {currentStep === 2 && (
+              {/* Step 2: Password - Only show if not in password reset mode */}
+              {!showPasswordReset && currentStep === 2 && (
                 <motion.div
                   key="password-step"
                   variants={stepVariants}
@@ -287,33 +438,45 @@ const LoginPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleBackToEmail}
-                      className="text-sm text-primary-600 hover:text-primary-800"
+                      className="text-sm text-primary-600 hover:text-primary-800 mr-4"
                     >
                       Not your email? Change it
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetEmail(email);
+                        setShowPasswordReset(true);
+                      }}
+                      className="text-sm text-primary-600 hover:text-primary-800"
+                    >
+                      Forgot password?
                     </button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
-                  Don't have an account yet?
-                </p>
-                <Link to={`/signup${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`} className="block">
-                  <Button
-                    type="button"
-                    fullWidth
-                    size="lg"
-                    variant="outline"
-                    icon={<UserPlus size={20} />}
-                  >
-                    Create Account
-                  </Button>
-                </Link>
+            {!showPasswordReset && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Don't have an account yet?
+                  </p>
+                  <Link to={`/signup${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`} className="block">
+                    <Button
+                      type="button"
+                      fullWidth
+                      size="lg"
+                      variant="outline"
+                      icon={<UserPlus size={20} />}
+                    >
+                      Create Account
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
