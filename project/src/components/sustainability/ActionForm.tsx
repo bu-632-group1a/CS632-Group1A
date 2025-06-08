@@ -18,6 +18,8 @@ interface FormInputs {
   description: string;
 }
 
+// Updated action types to match GraphQL schema expectations
+// These should align with the backend enum values
 const actionTypes = [
   { value: 'REUSABLE_BOTTLE', label: 'Used Reusable Bottle' },
   { value: 'PUBLIC_TRANSPORT', label: 'Used Public Transport' },
@@ -28,8 +30,18 @@ const actionTypes = [
   { value: 'ENERGY_SAVING', label: 'Saved Energy' },
   { value: 'WATER_CONSERVATION', label: 'Conserved Water' },
   { value: 'WASTE_REDUCTION', label: 'Reduced Waste' },
-  { value: 'HOME', label: 'Home Energy Efficiency' },
-  { value: 'OTHER', label: 'Other Action' },
+  { value: 'HOME_ENERGY_EFFICIENCY', label: 'Home Energy Efficiency' },
+  { value: 'SUSTAINABLE_FOOD', label: 'Chose Sustainable Food' },
+  { value: 'BIKE_WALK', label: 'Biked or Walked' },
+  { value: 'RENEWABLE_ENERGY', label: 'Used Renewable Energy' },
+  { value: 'ECO_FRIENDLY_PRODUCTS', label: 'Used Eco-Friendly Products' },
+  { value: 'CARBON_OFFSET', label: 'Purchased Carbon Offset' },
+  { value: 'PLANT_BASED_MEAL', label: 'Ate Plant-Based Meal' },
+  { value: 'REPAIR_REUSE', label: 'Repaired or Reused Item' },
+  { value: 'GREEN_TRANSPORTATION', label: 'Used Green Transportation' },
+  { value: 'SUSTAINABLE_SHOPPING', label: 'Sustainable Shopping' },
+  { value: 'ENVIRONMENTAL_EDUCATION', label: 'Environmental Education' },
+  { value: 'OTHER', label: 'Other Sustainable Action' },
 ];
 
 const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
@@ -97,14 +109,32 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       reset();
       onSuccess?.();
     },
+    onError: (error) => {
+      console.error('Error creating sustainability action:', error);
+      // Log the specific error details for debugging
+      if (error.graphQLErrors?.length > 0) {
+        console.error('GraphQL Errors:', error.graphQLErrors);
+      }
+      if (error.networkError) {
+        console.error('Network Error:', error.networkError);
+      }
+    }
   });
 
   const onSubmit = async (data: FormInputs) => {
     try {
+      console.log('Submitting sustainability action:', {
+        actionType: data.actionType,
+        description: data.description,
+        userId: userId,
+        performedAt: new Date().toISOString(),
+      });
+
       await createAction({
         variables: {
           input: {
-            ...data,
+            actionType: data.actionType, // This should now match the GraphQL enum
+            description: data.description || '', // Ensure description is always a string
             userId: userId, // Use the actual user ID from JWT
             performedAt: new Date().toISOString(),
           },
@@ -151,14 +181,27 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
           className="mb-4 p-4 bg-red-50 rounded-lg flex items-start"
         >
           <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-          <p className="text-red-700">Failed to save action. Please try again.</p>
+          <div>
+            <p className="text-red-700 font-medium">Failed to save action</p>
+            <p className="text-red-600 text-sm mt-1">
+              {error.graphQLErrors?.[0]?.message || error.message || 'Please try again.'}
+            </p>
+            {error.graphQLErrors?.length > 0 && (
+              <details className="mt-2">
+                <summary className="text-red-600 text-xs cursor-pointer">Technical Details</summary>
+                <pre className="text-red-500 text-xs mt-1 whitespace-pre-wrap">
+                  {JSON.stringify(error.graphQLErrors, null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
         </motion.div>
       )}
 
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Action Type
+            Action Type *
           </label>
           <select
             {...register('actionType', { required: 'Please select an action type' })}
@@ -194,9 +237,18 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
           fullWidth
           isLoading={loading}
           icon={<Leaf size={20} />}
+          disabled={!userId || userId === 'anonymous'}
         >
-          Log Action
+          {!userId || userId === 'anonymous' ? 'Sign In to Log Action' : 'Log Action'}
         </Button>
+
+        {(!userId || userId === 'anonymous') && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-blue-800 text-sm">
+              <strong>Note:</strong> You need to be signed in to save your sustainability actions and track your progress.
+            </p>
+          </div>
+        )}
       </div>
     </motion.form>
   );

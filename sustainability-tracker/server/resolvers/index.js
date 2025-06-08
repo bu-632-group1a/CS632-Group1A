@@ -105,7 +105,7 @@ const resolvers = {
 
     leaderboard: async (_, { limit = 10 }) => {
       try {
-        // First, get the aggregated data
+        // Get aggregated sustainability action data
         const leaderboardData = await SustainabilityAction.aggregate([
           {
             $group: {
@@ -127,11 +127,11 @@ const resolvers = {
           { $limit: limit },
         ]);
 
-        // Enrich with user data and actions by type
+        // Enrich with user profile data and actions by type
         const enrichedLeaderboard = await Promise.all(
           leaderboardData.map(async (entry, index) => {
             try {
-              // Try to find user by ID first, then by name if it's a string
+              // Find user by ID or by name (for legacy data)
               let user = null;
               
               // Check if userId looks like a MongoDB ObjectId
@@ -144,6 +144,13 @@ const resolvers = {
                   user = await User.findOne({
                     firstName: nameParts[0],
                     lastName: nameParts.slice(1).join(' ')
+                  }).select('firstName lastName username profilePicture city state company');
+                }
+                
+                // If not found by name, try by username
+                if (!user) {
+                  user = await User.findOne({
+                    username: entry.userId
                   }).select('firstName lastName username profilePicture city state company');
                 }
               }
@@ -166,7 +173,7 @@ const resolvers = {
                 },
               ]);
 
-              // Return the properly structured response
+              // Return the properly structured response with user profile data
               return {
                 userId: entry.userId,
                 fullName: user ? `${user.firstName} ${user.lastName}` : (entry.userId.includes(' ') ? entry.userId : 'Unknown User'),
