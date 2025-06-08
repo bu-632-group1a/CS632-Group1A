@@ -188,7 +188,7 @@ const ProfilePage: React.FC = () => {
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-medium text-gray-900 mb-2">Account Status</h3>
               <div className="space-y-2 text-sm">
-                <div>
+                {/* <div>
                   <span className="text-gray-600">Member since:</span>
                   <span className="ml-2 text-gray-900">
                     {new Date(user?.createdAt).toLocaleDateString()}
@@ -199,7 +199,7 @@ const ProfilePage: React.FC = () => {
                   <span className="ml-2 text-gray-900">
                     {new Date(user?.updatedAt).toLocaleDateString()}
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

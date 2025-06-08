@@ -9,7 +9,7 @@ console.log('JWT_SECRET:', JWT_SECRET);
 console.log('JWT_REFRESH_SECRET:', JWT_REFRESH_SECRET);
 
 export const prompteUser = (user) => {
-    const adminEmails = ['judahb@bu.edu', 'judahbernstein@gmail.com'];
+    const adminEmails = ['judahb@bu.edu', 'mscloddy@bu.edu', 'pahadid@bu.edu','sofiyak@bu.edu'];
       if (adminEmails.includes(user.email)) {
         user.role = 'ADMIN';
       } else {
