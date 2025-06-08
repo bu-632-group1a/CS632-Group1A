@@ -176,7 +176,6 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       const submissionData = {
         actionType: data.actionType,
         description: data.description || '',
-        userId: userId,
         performedAt: new Date().toISOString(),
       };
 
