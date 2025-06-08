@@ -3,9 +3,15 @@ export interface User {
   firstName: string;
   lastName: string;
   fullName: string;
+  username: string;
   email: string;
   profilePicture?: string;
+  city?: string;
+  state?: string;
+  company?: string;
+  location?: string;
   role: 'USER' | 'ADMIN';
+  isEmailVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,4 +60,42 @@ export interface LeaderboardEntry {
   profilePicture?: string;
   score: number;
   rank: number;
+}
+
+// GraphQL Types
+export interface BingoItemGraphQL {
+  id: string;
+  text: string;
+  position: number;
+  category: string;
+  points: number;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BingoCompletedItem {
+  item: BingoItemGraphQL;
+  completedAt: string;
+}
+
+export interface BingoAchievement {
+  type: 'ROW' | 'COLUMN' | 'DIAGONAL';
+  pattern: number[];
+  achievedAt: string;
+  pointsAwarded: number;
+}
+
+export interface BingoGame {
+  id: string;
+  userId: string;
+  completedItems: BingoCompletedItem[];
+  bingosAchieved: BingoAchievement[];
+  totalPoints: number;
+  isCompleted: boolean;
+  gameStartedAt: string;
+  gameCompletedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

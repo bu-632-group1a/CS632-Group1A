@@ -83,7 +83,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
   };
 
   const handleToggleItem = async (itemId: string) => {
-    if (loading) return;
+    if (loading || itemId.startsWith('placeholder')) return;
     
     try {
       await toggleBingoItem({
@@ -126,6 +126,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
                 ? 'bg-primary-100 border-2 border-primary-500 text-primary-800' 
                 : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700'}
               transition-colors disabled:opacity-50 disabled:cursor-not-allowed
+              ${loading ? 'pointer-events-none' : ''}
             `}
             onClick={() => handleToggleItem(item.id)}
             variants={itemVariants}

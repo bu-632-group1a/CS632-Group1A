@@ -1,13 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Award, Settings, Home } from 'lucide-react';
+import { Award, Settings, Home, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import BingoCard from '../components/bingo/BingoCard';
 import BingoAdminPanel from '../components/bingo/BingoAdminPanel';
 import { GET_BINGO_ITEMS, GET_BINGO_GAME, ME } from '../graphql/queries';
+import { RESET_BINGO_GAME } from '../graphql/mutations';
 import { useAuth } from '../context/AuthContext';
 
 const BingoPage: React.FC = () => {
@@ -19,8 +20,19 @@ const BingoPage: React.FC = () => {
   });
   
   const { data: bingoItemsData, loading: itemsLoading, error: itemsError } = useQuery(GET_BINGO_ITEMS);
-  const { data: bingoGameData, loading: gameLoading, error: gameError } = useQuery(GET_BINGO_GAME, {
-    skip: !isAuthenticated
+  const { data: bingoGameData, loading: gameLoading, error: gameError, refetch: refetchGame } = useQuery(GET_BINGO_GAME, {
+    skip: !isAuthenticated,
+    errorPolicy: 'all' // Continue even if there's an error (e.g., no game exists yet)
+  });
+
+  const [resetBingoGame, { loading: resetting }] = useMutation(RESET_BINGO_GAME, {
+    refetchQueries: [{ query: GET_BINGO_GAME }],
+    onCompleted: () => {
+      console.log('Bingo game reset successfully');
+    },
+    onError: (error) => {
+      console.error('Error resetting bingo game:', error);
+    }
   });
 
   const user = userData?.me;
@@ -67,6 +79,17 @@ const BingoPage: React.FC = () => {
   // Calculate bingo achievements
   const bingosAchieved = bingoGame?.bingosAchieved?.length || 0;
   const totalPoints = bingoGame?.totalPoints || 0;
+  const isGameCompleted = bingoGame?.isCompleted || false;
+
+  const handleResetGame = async () => {
+    if (window.confirm('Are you sure you want to reset your bingo game? This will clear all your progress.')) {
+      try {
+        await resetBingoGame();
+      } catch (error) {
+        // Error is handled by onError callback
+      }
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -83,8 +106,18 @@ const BingoPage: React.FC = () => {
 
   if (itemsError || gameError) {
     return (
-      <div className="bg-red-50 p-4 rounded-lg">
-        <p className="text-red-700">Failed to load bingo data. Please try again later.</p>
+      <div className="space-y-4">
+        <div className="bg-red-50 p-4 rounded-lg">
+          <p className="text-red-700">Failed to load bingo data. Please try again later.</p>
+          {gameError && (
+            <p className="text-red-600 text-sm mt-2">
+              Game Error: {gameError.message}
+            </p>
+          )}
+        </div>
+        <Button onClick={() => refetchGame()} icon={<RefreshCw size={20} />}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -126,6 +159,15 @@ const BingoPage: React.FC = () => {
               {showAdminPanel ? 'Hide Admin' : 'Admin Panel'}
             </Button>
           )}
+          <Button
+            variant="outline"
+            onClick={handleResetGame}
+            isLoading={resetting}
+            icon={<RefreshCw size={20} />}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            Reset Game
+          </Button>
           <Link to="/">
             <Button
               variant="ghost"
@@ -178,7 +220,7 @@ const BingoPage: React.FC = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-primary-50 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-primary-600 mb-1">
                   {completedItems}
@@ -197,15 +239,65 @@ const BingoPage: React.FC = () => {
                 </div>
                 <div className="text-sm text-gray-600">Total Points</div>
               </div>
+              <div className="bg-green-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-green-600 mb-1">
+                  {isGameCompleted ? 'YES' : 'NO'}
+                </div>
+                <div className="text-sm text-gray-600">Game Complete</div>
+              </div>
             </div>
+
+            {/* Game Status */}
+            {isGameCompleted && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <Award size={20} className="text-green-600 mr-2" />
+                  <div>
+                    <h3 className="font-medium text-green-900">Congratulations!</h3>
+                    <p className="text-green-800 text-sm">
+                      You've completed your bingo card! You earned {totalPoints} points and achieved {bingosAchieved} bingo{bingosAchieved !== 1 ? 's' : ''}.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Game Started Info */}
+            {bingoGame?.gameStartedAt && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <Award size={20} className="text-blue-600 mr-2" />
+                  <div>
+                    <h3 className="font-medium text-blue-900">Game Started</h3>
+                    <p className="text-blue-800 text-sm">
+                      Started on {new Date(bingoGame.gameStartedAt).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                      {bingoGame.gameCompletedAt && (
+                        <span> • Completed on {new Date(bingoGame.gameCompletedAt).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="bg-gray-50 p-4 rounded-lg mb-6">
               <h3 className="font-medium text-gray-900 mb-2">How to Play</h3>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li>Complete activities during the event to mark squares</li>
-                <li>Get 4 in a row (horizontal, vertical, or diagonal) to achieve BINGO</li>
-                <li>Each BINGO earns you bonus sustainability points</li>
-                <li>Try to complete all squares for maximum points!</li>
+                <li>• Complete activities during the event to mark squares</li>
+                <li>• Get 4 in a row (horizontal, vertical, or diagonal) to achieve BINGO</li>
+                <li>• Each BINGO earns you bonus sustainability points</li>
+                <li>• Try to complete all squares for maximum points!</li>
+                <li>• Your progress is automatically saved</li>
               </ul>
             </div>
             
