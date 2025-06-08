@@ -139,7 +139,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
               flex items-center justify-center
               p-2 sm:p-3 md:p-4
               rounded-lg text-center
-              text-[7px] sm:text-xs md:text-base lg:text-lg
+              text-[6px] sm:text-xs md:text-base lg:text-lg
               break-words whitespace-normal
               overflow-hidden
               ${item.completed 
