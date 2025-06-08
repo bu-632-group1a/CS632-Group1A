@@ -62,6 +62,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
+            userId: userId
           }
         }
       });
@@ -70,6 +71,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         query: GET_SUSTAINABILITY_ACTIONS,
         variables: {
           filter: {
+            userId: userId
           }
         },
         data: {
@@ -83,6 +85,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
       const existingMetrics = cache.readQuery({
         query: GET_SUSTAINABILITY_METRICS,
         variables: {
+          userId: userId
         }
       });
       
@@ -90,6 +93,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
         cache.writeQuery({
           query: GET_SUSTAINABILITY_METRICS,
           variables: {
+            userId: userId
           },
           data: {
             sustainabilityMetrics: {
@@ -131,7 +135,7 @@ const ActionForm: React.FC<ActionFormProps> = ({ onSuccess }) => {
           input: {
             actionType: data.actionType, // This should now match the GraphQL enum
             description: data.description || '', // Ensure description is always a string
-            userId: userId, // Use the actual user ID from JWT
+            // userId: userId, // Use the actual user ID from JWT
             performedAt: new Date().toISOString(),
           },
         },
