@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Printer as Print, QrCode } from 'lucide-react';
+import { X, Download, Printer as Print, QrCode, ExternalLink } from 'lucide-react';
 import Button from './Button';
 import { Session } from '../../types';
 
@@ -11,8 +11,20 @@ interface QRCodeModalProps {
 }
 
 const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, session }) => {
-  // Generate QR code URL using a free QR code API
-  const checkInUrl = `${window.location.origin}/check-in?session=${session.id}&auto=true`;
+  // Generate the correct check-in URL
+  const getCheckInUrl = () => {
+    // In development, use localhost
+    if (import.meta.env.DEV) {
+      return `${window.location.origin}/check-in?session=${session.id}&auto=true`;
+    }
+    
+    // In production, use the actual deployed URL
+    // You can set this as an environment variable VITE_APP_URL
+    const deployedUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+    return `${deployedUrl}/check-in?session=${session.id}&auto=true`;
+  };
+
+  const checkInUrl = getCheckInUrl();
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(checkInUrl)}`;
 
   const handlePrint = () => {
@@ -64,6 +76,15 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, session }) =
                 background: #f9fafb;
                 border-radius: 8px;
               }
+              .url-info {
+                font-size: 12px;
+                color: #6b7280;
+                margin-top: 15px;
+                word-break: break-all;
+                background: #f3f4f6;
+                padding: 10px;
+                border-radius: 6px;
+              }
               @media print {
                 body { padding: 20px; }
                 .qr-container { border: 2px solid #000; }
@@ -85,6 +106,10 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, session }) =
                 2. Tap the link that appears<br>
                 3. You'll be automatically checked in to this session
               </div>
+              <div class="url-info">
+                <strong>Direct link:</strong><br>
+                ${checkInUrl}
+              </div>
             </div>
           </body>
         </html>
@@ -102,6 +127,10 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, session }) =
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleTestLink = () => {
+    window.open(checkInUrl, '_blank');
   };
 
   return (
@@ -184,6 +213,17 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, session }) =
                 </label>
                 <div className="bg-gray-50 p-3 rounded-lg border">
                   <code className="text-xs text-gray-800 break-all">{checkInUrl}</code>
+                </div>
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestLink}
+                    icon={<ExternalLink size={16} />}
+                    className="text-xs"
+                  >
+                    Test Link
+                  </Button>
                 </div>
               </div>
 
