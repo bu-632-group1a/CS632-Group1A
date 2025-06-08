@@ -39,7 +39,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
           <h2 style="color: #333;">Email Verification</h2>
           <p>Thank you for signing up! Please click the button below to verify your email address:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}" 
+            <a href="${process.env.CLIENT_URL || 'http://localhost:5174'}/verify-email?token=${verificationToken}" 
                style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
               Verify Email
             </a>
@@ -79,7 +79,7 @@ export const sendPasswordResetEmail = async (email, resetToken, firstName) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #16a34a; margin: 0; font-size: 28px;">🌱 Sustainability Tracker</h1>
+              <h1 style="color: #16a34a; margin: 0; font-size: 28px;">🌱 EcoPulse - Sustainability Tracker</h1>
             </div>
             
             <h2 style="color: #333; margin-bottom: 20px;">Password Reset Request</h2>
@@ -94,7 +94,7 @@ export const sendPasswordResetEmail = async (email, resetToken, firstName) => {
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}" 
+              <a href="${process.env.CLIENT_URL || 'http://localhost:5174'}/reset-password?token=${resetToken}" 
                  style="background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
                 Reset Password
               </a>
@@ -115,7 +115,7 @@ export const sendPasswordResetEmail = async (email, resetToken, firstName) => {
               If you're having trouble clicking the button, copy and paste this link into your browser:
             </p>
             <p style="color: #16a34a; font-size: 12px; word-break: break-all; background-color: #f3f4f6; padding: 10px; border-radius: 4px;">
-              ${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}
+              ${process.env.CLIENT_URL || 'http://localhost:5174'}/reset-password?token=${resetToken}
             </p>
             
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
@@ -175,7 +175,7 @@ export const sendPasswordResetConfirmationEmail = async (email, firstName) => {
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" 
+              <a href="${process.env.CLIENT_URL || 'http://localhost:5174'}/login" 
                  style="background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
                 Log In to Your Account
               </a>

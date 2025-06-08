@@ -4,6 +4,8 @@ import MainLayout from '../layouts/MainLayout';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import RegistrationPage from '../pages/RegistrationPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
+import VerifyEmailPage from '../pages/VerifyEmailPage';
 import SessionsPage from '../pages/SessionsPage';
 import BookmarksPage from '../pages/BookmarksPage';
 import CalendarPage from '../pages/CalendarPage';
@@ -35,7 +37,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
   
   if (user?.role !== 'ADMIN') {
-    return <Navigate to="/\" replace />;
+    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
@@ -135,8 +137,24 @@ export const router = createBrowserRouter([
         element: <Navigate to="/signup" replace />,
       },
       {
+        path: 'reset-password',
+        element: (
+          <PageWrapper>
+            <ResetPasswordPage />
+          </PageWrapper>
+        ),
+      },
+      {
+        path: 'verify-email',
+        element: (
+          <PageWrapper>
+            <VerifyEmailPage />
+          </PageWrapper>
+        ),
+      },
+      {
         path: 'logout',
-        element: <Navigate to="/\" replace />,
+        element: <Navigate to="/" replace />,
       },
       {
         path: 'sessions',
