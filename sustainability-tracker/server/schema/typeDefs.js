@@ -97,6 +97,7 @@ export const typeDefs = gql`
     performedAt: String!
     createdAt: String!
     updatedAt: String!
+    userId: ID
   }
 
   enum ActionType {

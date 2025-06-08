@@ -298,10 +298,10 @@ const resolvers = {
         // Use the authenticated user's ID instead of the input userId
         const newAction = new SustainabilityAction({
           ...input,
-          userId: authUser.userId, // Override with authenticated user's ID
+          userId: input.userId || authUser.userId,
           performedAt: new Date(input.performedAt),
-        });
-        
+        });   
+           
         await newAction.save();
         
         pubsub.publish(EVENTS.SUSTAINABILITY_ACTION_CREATED, {
