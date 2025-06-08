@@ -31,7 +31,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
     }
     
     const mailOptions = {
-      from: `"Sustainability Tracker" <${process.env.EMAIL_USER}>`,
+      from: `"Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
       to: email,
       subject: 'Verify Your Email Address',
       html: `
@@ -72,7 +72,7 @@ export const sendPasswordResetEmail = async (email, resetToken, firstName) => {
     }
     
     const mailOptions = {
-      from: `"Sustainability Tracker" <${process.env.EMAIL_USER}>`,
+      from: `"Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
       to: email,
       subject: 'Reset Your Password - Sustainability Tracker',
       html: `
@@ -147,7 +147,7 @@ export const sendPasswordResetConfirmationEmail = async (email, firstName) => {
     }
     
     const mailOptions = {
-      from: `"Sustainability Tracker" <${process.env.EMAIL_USER}>`,
+      from: `"Sustainability Tracker" <${process.env.EMAIL_FROM}>`,
       to: email,
       subject: 'Password Successfully Reset - Sustainability Tracker',
       html: `
