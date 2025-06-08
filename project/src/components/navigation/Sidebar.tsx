@@ -84,7 +84,7 @@ const Sidebar: React.FC = () => {
           transition={{ delay: 0.3 }}
         >
           <Sprout size={28} className="text-primary-600" />
-          <h1 className="font-bold text-xl text-gray-900">PM in Practice</h1>
+          <h1 className="font-bold text-xl text-gray-900">EcoPulse</h1>
         </motion.div>
       </div>
       
