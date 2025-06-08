@@ -13,6 +13,7 @@ import ProfilePage from '../pages/ProfilePage';
 import CheckInPage from '../pages/CheckInPage';
 import BingoPage from '../pages/BingoPage';
 import BingoAdminPage from '../pages/BingoAdminPage';
+import AdminDashboardPage from '../pages/AdminDashboardPage';
 import SustainabilityPage from '../pages/SustainabilityPage';
 import LeaderboardPage from '../pages/LeaderboardPage';
 import { useAuth } from '../context/AuthContext';
@@ -219,6 +220,16 @@ export const router = createBrowserRouter([
           <AdminRoute>
             <PageWrapper>
               <BingoAdminPage />
+            </PageWrapper>
+          </AdminRoute>
+        ),
+      },
+      {
+        path: 'admin/dashboard',
+        element: (
+          <AdminRoute>
+            <PageWrapper>
+              <AdminDashboardPage />
             </PageWrapper>
           </AdminRoute>
         ),

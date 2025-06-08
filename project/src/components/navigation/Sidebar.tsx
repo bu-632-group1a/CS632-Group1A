@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   Calendar, BarChart2, Bookmark, Leaf, Layout, 
   CheckSquare, BookOpen, Home, Sprout, LogIn, 
-  UserPlus, LogOut, CalendarDays, Settings
+  UserPlus, LogOut, CalendarDays, Settings, BarChart3
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -28,6 +28,7 @@ const Sidebar: React.FC = () => {
     ];
 
     const adminItems = user?.role === 'ADMIN' ? [
+      { label: 'Admin Dashboard', icon: <BarChart3 size={20} />, path: '/admin/dashboard' },
       { label: 'Bingo Administration', icon: <Settings size={20} />, path: '/admin/bingo' },
     ] : [];
 

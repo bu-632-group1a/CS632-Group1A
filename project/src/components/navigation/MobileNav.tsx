@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Menu, X, LogIn, Calendar, BarChart2, UserPlus,
   Bookmark, Leaf, Layout, CheckSquare, BookOpen, Home,
-  LogOut, CalendarDays, Settings
+  LogOut, CalendarDays, Settings, BarChart3
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -32,6 +32,7 @@ const MobileNav: React.FC = () => {
     ];
 
     const adminItems = user?.role === 'ADMIN' ? [
+      { label: 'Admin Dashboard', icon: <BarChart3 size={20} />, path: '/admin/dashboard' },
       { label: 'Bingo Administration', icon: <Settings size={20} />, path: '/admin/bingo' },
     ] : [];
 
