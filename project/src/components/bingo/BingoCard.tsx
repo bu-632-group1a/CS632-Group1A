@@ -132,14 +132,13 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
           <motion.button
             key={item.id}
             className={`
-              w-full h-full aspect-square 
-              min-w-[56px] min-h-[56px] 
-              sm:min-w-[72px] sm:min-h-[72px] 
-              md:min-w-[96px] md:min-h-[96px]
+              w-full 
+              aspect-auto md:aspect-square
+              min-h-[64px] sm:min-h-[80px] md:min-h-[96px]
               flex items-center justify-center 
-              p-1 sm:p-2 md:p-3 
+              p-2 sm:p-3 md:p-4 
               rounded-lg text-center 
-              text-xs sm:text-sm md:text-base 
+              text-sm sm:text-base md:text-lg
               break-words whitespace-normal
               ${item.completed 
                 ? 'bg-primary-100 border-2 border-primary-500 text-primary-800 shadow-md' 
@@ -157,7 +156,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
             {loading ? (
               <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <span className="whitespace-normal">{item.text}</span>
+              <span className="whitespace-normal break-words">{item.text}</span>
             )}
           </motion.button>
         ))}
