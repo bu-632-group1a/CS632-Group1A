@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, CheckCheck, BarChart2, Home, AlertCircle, Calendar, Clock, MapPin, User, QrCode } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { CheckCircle, CheckCheck, BarChart2, Home, AlertCircle, Calendar, Clock, MapPin, User, QrCode, LogIn } from 'lucide-react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -13,6 +13,7 @@ import { useCheckIns } from '../hooks/useCheckIns';
 const CheckInPage: React.FC = () => {
   const { sessions } = useApp();
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const { 
     checkIns, 
     loading, 
@@ -28,36 +29,52 @@ const CheckInPage: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [processingSession, setProcessingSession] = useState<string | null>(null);
   const [qrModalSession, setQrModalSession] = useState<string | null>(null);
+  const [pendingAutoCheckIn, setPendingAutoCheckIn] = useState<string | null>(null);
+
+  // Get session info from URL parameters
+  const sessionIdFromUrl = searchParams.get('session');
+  const autoCheckIn = searchParams.get('auto');
+  const targetSession = sessionIdFromUrl ? sessions.find(s => s.id === sessionIdFromUrl) : null;
 
   // Handle automatic check-in from QR code
   useEffect(() => {
-    const sessionId = searchParams.get('session');
-    const autoCheckIn = searchParams.get('auto');
-    
-    if (sessionId && autoCheckIn === 'true' && isAuthenticated) {
-      const session = sessions.find(s => s.id === sessionId);
-      if (session && !isSessionCheckedIn(sessionId)) {
-        handleCheckIn(sessionId, true);
+    if (sessionIdFromUrl && autoCheckIn === 'true') {
+      if (isAuthenticated) {
+        // User is authenticated, proceed with auto check-in
+        const session = sessions.find(s => s.id === sessionIdFromUrl);
+        if (session && !isSessionCheckedIn(sessionIdFromUrl)) {
+          handleCheckIn(sessionIdFromUrl, true);
+        }
+      } else {
+        // User is not authenticated, store the pending check-in
+        setPendingAutoCheckIn(sessionIdFromUrl);
       }
     }
-  }, [searchParams, isAuthenticated, sessions]);
+  }, [searchParams, isAuthenticated, sessions, sessionIdFromUrl, autoCheckIn]);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="text-center py-12">
-        <CheckCircle size={48} className="mx-auto mb-4 text-gray-400" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Please sign in</h2>
-        <p className="text-gray-600 max-w-md mx-auto">
-          You need to be signed in to check in to sessions and track your attendance.
-        </p>
-        <Link to="/login" className="text-primary-600 hover:text-primary-800 font-medium mt-4 inline-block">
-          Go to login
-        </Link>
-      </div>
-    );
-  }
+  // Handle pending check-in after user signs in
+  useEffect(() => {
+    if (isAuthenticated && pendingAutoCheckIn) {
+      const session = sessions.find(s => s.id === pendingAutoCheckIn);
+      if (session && !isSessionCheckedIn(pendingAutoCheckIn)) {
+        handleCheckIn(pendingAutoCheckIn, true);
+      }
+      setPendingAutoCheckIn(null);
+    }
+  }, [isAuthenticated, pendingAutoCheckIn, sessions]);
+
+  const handleSignIn = () => {
+    // Preserve the current URL parameters when redirecting to login
+    const currentUrl = window.location.pathname + window.location.search;
+    navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+  };
 
   const handleCheckIn = async (sessionId: string, isAutomatic = false) => {
+    if (!isAuthenticated) {
+      setPendingAutoCheckIn(sessionId);
+      return;
+    }
+
     const session = sessions.find(s => s.id === sessionId);
     if (!session) return;
 
@@ -110,6 +127,154 @@ const CheckInPage: React.FC = () => {
   };
 
   const selectedSessionData = qrModalSession ? sessions.find(s => s.id === qrModalSession) : null;
+
+  // Show QR code specific session if accessed via QR code
+  if (!isAuthenticated && targetSession && autoCheckIn === 'true') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Session Check-In</h1>
+              <p className="text-gray-600">Sign in to check in to this session</p>
+            </div>
+            <Link to="/">
+              <Button
+                variant="ghost"
+                icon={<Home size={20} />}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Home
+              </Button>
+            </Link>
+          </div>
+
+          {/* Session Preview */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={32} className="text-primary-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Ready to Check In</h2>
+                <p className="text-gray-600">You're about to check in to this session:</p>
+              </div>
+
+              {/* Session Details */}
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 flex-1 mr-4">
+                    {targetSession.title}
+                  </h3>
+                  <Badge 
+                    variant={targetSession.category === 'Keynote' ? 'primary' : 'secondary'} 
+                    size="sm"
+                  >
+                    {targetSession.category}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center">
+                    <Clock size={16} className="mr-2 text-primary-600" />
+                    <span>{targetSession.time}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin size={16} className="mr-2 text-primary-600" />
+                    <span>{targetSession.location}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <User size={16} className="mr-2 text-primary-600" />
+                    <span>{targetSession.speaker}</span>
+                  </div>
+                </div>
+                
+                <p className="text-gray-700 text-sm">
+                  {targetSession.description}
+                </p>
+              </div>
+
+              {/* Sign In Prompt */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <div className="bg-blue-100 p-2 rounded-full mr-3">
+                    <LogIn size={20} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-blue-900 mb-1">Sign In Required</h4>
+                    <p className="text-blue-800 text-sm">
+                      Please sign in to your account to check in to this session. 
+                      After signing in, you'll be automatically checked in.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleSignIn}
+                  icon={<LogIn size={20} />}
+                  className="flex-1"
+                >
+                  Sign In to Check In
+                </Button>
+                <Link to="/signup" className="flex-1">
+                  <Button
+                    variant="outline"
+                    fullWidth
+                    icon={<User size={20} />}
+                  >
+                    Create Account
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="mt-4 text-center">
+                <Link to="/sessions" className="text-sm text-primary-600 hover:text-primary-800">
+                  Browse all sessions
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Regular check-in page for authenticated users or general access
+  if (!isAuthenticated && !targetSession) {
+    return (
+      <div className="text-center py-12">
+        <CheckCircle size={48} className="mx-auto mb-4 text-gray-400" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Please sign in</h2>
+        <p className="text-gray-600 max-w-md mx-auto mb-6">
+          You need to be signed in to check in to sessions and track your attendance.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <Button
+            onClick={handleSignIn}
+            icon={<LogIn size={20} />}
+          >
+            Sign In
+          </Button>
+          <Link to="/signup">
+            <Button
+              variant="outline"
+              icon={<User size={20} />}
+            >
+              Create Account
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
@@ -165,55 +330,57 @@ const CheckInPage: React.FC = () => {
         </motion.div>
 
         {/* Progress Summary */}
-        <motion.div variants={itemVariants}>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center mb-4">
-                <div className="bg-primary-100 p-2 rounded-full mr-4">
-                  <BarChart2 size={24} className="text-primary-600" />
+        {isAuthenticated && (
+          <motion.div variants={itemVariants}>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center mb-4">
+                  <div className="bg-primary-100 p-2 rounded-full mr-4">
+                    <BarChart2 size={24} className="text-primary-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-bold text-gray-900">Your Attendance Progress</h2>
+                    <p className="text-gray-600">Track your conference participation</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-lg font-bold text-gray-900">Your Attendance Progress</h2>
-                  <p className="text-gray-600">Track your conference participation</p>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-primary-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-primary-600 mb-1">
-                    {checkedInCount}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-primary-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-primary-600 mb-1">
+                      {checkedInCount}
+                    </div>
+                    <div className="text-sm text-gray-600">Sessions Attended</div>
                   </div>
-                  <div className="text-sm text-gray-600">Sessions Attended</div>
-                </div>
-                <div className="bg-secondary-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-secondary-600 mb-1">
-                    {totalSessions}
+                  <div className="bg-secondary-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-secondary-600 mb-1">
+                      {totalSessions}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Sessions</div>
                   </div>
-                  <div className="text-sm text-gray-600">Total Sessions</div>
-                </div>
-                <div className="bg-accent-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-accent-600 mb-1">
-                    {totalSessions > 0 ? Math.round((checkedInCount / totalSessions) * 100) : 0}%
+                  <div className="bg-accent-50 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-accent-600 mb-1">
+                      {totalSessions > 0 ? Math.round((checkedInCount / totalSessions) * 100) : 0}%
+                    </div>
+                    <div className="text-sm text-gray-600">Completion Rate</div>
                   </div>
-                  <div className="text-sm text-gray-600">Completion Rate</div>
                 </div>
-              </div>
 
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <motion.div 
-                  className="bg-primary-600 h-3 rounded-full" 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${totalSessions > 0 ? (checkedInCount / totalSessions) * 100 : 0}%` }}
-                  transition={{ duration: 0.8, delay: 0.5 }}
-                />
-              </div>
-              <div className="flex justify-between mt-2 text-sm text-gray-600">
-                <span>{checkedInCount} checked in</span>
-                <span>{totalSessions - checkedInCount} remaining</span>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <motion.div 
+                    className="bg-primary-600 h-3 rounded-full" 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${totalSessions > 0 ? (checkedInCount / totalSessions) * 100 : 0}%` }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                  />
+                </div>
+                <div className="flex justify-between mt-2 text-sm text-gray-600">
+                  <span>{checkedInCount} checked in</span>
+                  <span>{totalSessions - checkedInCount} remaining</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Benefits Info */}
         <motion.div
@@ -283,15 +450,17 @@ const CheckInPage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {sessions.map((session) => {
-                const isCheckedIn = isSessionCheckedIn(session.id);
+                const isCheckedIn = isAuthenticated ? isSessionCheckedIn(session.id) : false;
                 const isProcessing = processingSession === session.id;
                 const isSelected = selectedSession === session.id;
+                const isTargetSession = targetSession?.id === session.id;
                 
                 return (
                   <motion.div 
                     key={session.id}
                     animate={isSelected ? { scale: [1, 1.02, 1] } : {}}
                     transition={{ duration: 0.5 }}
+                    className={isTargetSession ? 'ring-2 ring-primary-500 rounded-lg' : ''}
                   >
                     <Card interactive>
                       <CardContent className="p-0">
@@ -308,6 +477,11 @@ const CheckInPage: React.FC = () => {
                               <div className="flex items-start justify-between mb-2">
                                 <h3 className="text-lg font-bold text-gray-900 flex-1 mr-4">
                                   {session.title}
+                                  {isTargetSession && (
+                                    <span className="ml-2 text-sm bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
+                                      QR Code Session
+                                    </span>
+                                  )}
                                 </h3>
                                 <Badge 
                                   variant={session.category === 'Keynote' ? 'primary' : 'secondary'} 
@@ -359,7 +533,15 @@ const CheckInPage: React.FC = () => {
                                 </Button>
 
                                 {/* Check-in Button */}
-                                {isCheckedIn ? (
+                                {!isAuthenticated ? (
+                                  <Button
+                                    variant="primary"
+                                    onClick={handleSignIn}
+                                    icon={<LogIn size={18} />}
+                                  >
+                                    Sign In to Check In
+                                  </Button>
+                                ) : isCheckedIn ? (
                                   <Button
                                     variant="outline"
                                     onClick={() => handleCheckIn(session.id)}

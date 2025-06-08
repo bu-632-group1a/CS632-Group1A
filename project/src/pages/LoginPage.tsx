@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, LogIn, Home, UserPlus, ArrowLeft, ArrowRight } from 'lucide-react';
 import Card, { CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
@@ -13,8 +13,24 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   
-  const { login, loading } = useAuth();
+  const { login, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Get redirect URL from query params
+  const redirectUrl = searchParams.get('redirect');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (redirectUrl) {
+        // Redirect to the original URL they were trying to access
+        navigate(redirectUrl, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, navigate, redirectUrl]);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,7 +65,7 @@ const LoginPage: React.FC = () => {
     
     try {
       await login(email, password);
-      navigate('/');
+      // Navigation will be handled by the useEffect above
     } catch (err: any) {
       // Check if it's a network error with status code 400
       if (err.networkError?.statusCode === 400 || err.message?.includes('400')) {
@@ -86,7 +102,9 @@ const LoginPage: React.FC = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p className="text-gray-600">Sign in to continue your conference journey</p>
+            <p className="text-gray-600">
+              {redirectUrl ? 'Sign in to continue to your destination' : 'Sign in to continue your conference journey'}
+            </p>
           </div>
           <Link to="/">
             <Button
@@ -98,6 +116,26 @@ const LoginPage: React.FC = () => {
             </Button>
           </Link>
         </div>
+
+        {/* Show redirect notice if coming from QR code */}
+        {redirectUrl && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"
+          >
+            <div className="flex items-center">
+              <div className="bg-blue-100 p-2 rounded-full mr-3">
+                <LogIn size={16} className="text-blue-600" />
+              </div>
+              <div>
+                <p className="text-blue-800 text-sm">
+                  You'll be redirected to your destination after signing in.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Progress Indicator */}
         <div className="mb-6">
@@ -263,7 +301,7 @@ const LoginPage: React.FC = () => {
                 <p className="text-sm text-gray-600 mb-4">
                   Don't have an account yet?
                 </p>
-                <Link to="/signup" className="block">
+                <Link to={`/signup${redirectUrl ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`} className="block">
                   <Button
                     type="button"
                     fullWidth

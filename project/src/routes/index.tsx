@@ -177,13 +177,12 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        // IMPORTANT: Remove ProtectedRoute wrapper from check-in to allow QR code access
         path: 'check-in',
         element: (
-          <ProtectedRoute>
-            <PageWrapper>
-              <CheckInPage />
-            </PageWrapper>
-          </ProtectedRoute>
+          <PageWrapper>
+            <CheckInPage />
+          </PageWrapper>
         ),
       },
       {
