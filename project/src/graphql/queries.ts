@@ -52,9 +52,15 @@ export const ME = gql`
       firstName
       lastName
       fullName
+      username
       email
       profilePicture
+      city
+      state
+      company
+      location
       role
+      isEmailVerified
       createdAt
       updatedAt
     }

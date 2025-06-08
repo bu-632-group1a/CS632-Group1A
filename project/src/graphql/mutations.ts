@@ -23,8 +23,15 @@ export const LOGIN = gql`
         firstName
         lastName
         fullName
+        username
         email
+        profilePicture
+        city
+        state
+        company
+        location
         role
+        isEmailVerified
         createdAt
         updatedAt
       }
@@ -42,8 +49,15 @@ export const REGISTER = gql`
         firstName
         lastName
         fullName
+        username
         email
+        profilePicture
+        city
+        state
+        company
+        location
         role
+        isEmailVerified
         createdAt
         updatedAt
       }
@@ -63,9 +77,15 @@ export const REFRESH_TOKEN = gql`
         firstName
         lastName
         fullName
+        username
         email
         profilePicture
+        city
+        state
+        company
+        location
         role
+        isEmailVerified
         createdAt
         updatedAt
       }
@@ -80,8 +100,37 @@ export const UPDATE_PROFILE_PICTURE = gql`
       firstName
       lastName
       fullName
+      username
       email
       profilePicture
+      city
+      state
+      company
+      location
+      role
+      isEmailVerified
+    }
+  }
+`;
+
+export const UPDATE_USER_PROFILE = gql`
+  mutation UpdateUserProfile($input: UpdateUserProfileInput!) {
+    updateUserProfile(input: $input) {
+      id
+      firstName
+      lastName
+      fullName
+      username
+      email
+      profilePicture
+      city
+      state
+      company
+      location
+      role
+      isEmailVerified
+      createdAt
+      updatedAt
     }
   }
 `;

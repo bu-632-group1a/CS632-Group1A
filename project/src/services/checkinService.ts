@@ -1,10 +1,10 @@
-interface BookmarkRequest {
+interface CheckInRequest {
   code: string;
   description: string;
   userId: string;
 }
 
-interface BookmarkResponse {
+interface CheckInResponse {
   id: number;
   code: string;
   description: string;
@@ -110,7 +110,7 @@ class RequestQueue {
         } else if (response.status === 404) {
           throw new Error('Resource not found.');
         } else if (response.status === 409) {
-          throw new Error('Bookmark already exists.');
+          throw new Error('Check-in already exists for this session.');
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.');
         } else {
@@ -142,7 +142,7 @@ class RequestQueue {
 
 const requestQueue = new RequestQueue();
 
-export class BookmarkService {
+export class CheckInService {
   private static async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -150,99 +150,91 @@ export class BookmarkService {
     return requestQueue.add<T>(endpoint, options);
   }
 
-  static async createBookmark(bookmark: BookmarkRequest): Promise<BookmarkResponse> {
+  static async createCheckIn(checkIn: CheckInRequest): Promise<CheckInResponse> {
     try {
-      return await this.makeRequest<BookmarkResponse>('/bookmarks', {
+      return await this.makeRequest<CheckInResponse>('/checkins', {
         method: 'POST',
-        body: JSON.stringify(bookmark),
+        body: JSON.stringify(checkIn),
       });
     } catch (error) {
-      console.error('Failed to create bookmark:', error);
+      console.error('Failed to create check-in:', error);
       throw error;
     }
   }
 
-  static async getAllBookmarks(): Promise<BookmarkResponse[]> {
+  static async getAllCheckIns(): Promise<CheckInResponse[]> {
     try {
-      return await this.makeRequest<BookmarkResponse[]>('/bookmarks');
+      return await this.makeRequest<CheckInResponse[]>('/checkins');
     } catch (error) {
-      console.error('Failed to fetch bookmarks:', error);
+      console.error('Failed to fetch check-ins:', error);
       throw error;
     }
   }
 
-  static async getBookmark(id: number): Promise<BookmarkResponse> {
+  static async updateCheckIn(id: number, checkIn: Partial<CheckInRequest>): Promise<CheckInResponse> {
     try {
-      return await this.makeRequest<BookmarkResponse>(`/bookmarks/${id}`);
-    } catch (error) {
-      console.error(`Failed to fetch bookmark ${id}:`, error);
-      throw error;
-    }
-  }
-
-  static async updateBookmark(id: number, bookmark: Partial<BookmarkRequest>): Promise<BookmarkResponse> {
-    try {
-      return await this.makeRequest<BookmarkResponse>(`/bookmarks/${id}`, {
+      return await this.makeRequest<CheckInResponse>(`/checkins/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(bookmark),
+        body: JSON.stringify(checkIn),
       });
     } catch (error) {
-      console.error(`Failed to update bookmark ${id}:`, error);
+      console.error(`Failed to update check-in ${id}:`, error);
       throw error;
     }
   }
 
-  static async deleteBookmark(id: number): Promise<void> {
+  static async deleteCheckIn(id: number): Promise<void> {
     try {
-      await this.makeRequest<void>(`/bookmarks/${id}`, {
+      await this.makeRequest<void>(`/checkins/${id}`, {
         method: 'DELETE',
       });
     } catch (error) {
-      console.error(`Failed to delete bookmark ${id}:`, error);
+      console.error(`Failed to delete check-in ${id}:`, error);
       throw error;
     }
   }
 
-  static async getUserBookmarks(userId: string): Promise<BookmarkResponse[]> {
+  static async getUserCheckIns(userId: string): Promise<CheckInResponse[]> {
     try {
-      // Since the API now requires authentication, we can fetch all bookmarks
+      // Since the API now requires authentication, we can fetch all check-ins
       // and the server should filter them based on the authenticated user
-      const allBookmarks = await this.getAllBookmarks();
-      return allBookmarks.filter(bookmark => bookmark.userId === userId);
+      const allCheckIns = await this.getAllCheckIns();
+      return allCheckIns.filter(checkIn => checkIn.userId === userId);
     } catch (error) {
-      console.error(`Failed to fetch bookmarks for user ${userId}:`, error);
+      console.error(`Failed to fetch check-ins for user ${userId}:`, error);
       throw error;
     }
   }
 
-  // Batch operations for better performance
-  static async createMultipleBookmarks(bookmarks: BookmarkRequest[]): Promise<BookmarkResponse[]> {
+  // Check if user is checked in to a specific session
+  static async isCheckedIn(sessionId: string, userId: string): Promise<boolean> {
     try {
-      const promises = bookmarks.map(bookmark => this.createBookmark(bookmark));
-      return await Promise.all(promises);
+      const userCheckIns = await this.getUserCheckIns(userId);
+      return userCheckIns.some(checkIn => checkIn.code === sessionId);
     } catch (error) {
-      console.error('Failed to create multiple bookmarks:', error);
-      throw error;
+      console.error('Failed to check check-in status:', error);
+      return false;
     }
   }
 
-  static async deleteMultipleBookmarks(ids: number[]): Promise<void> {
+  // Get check-in by session ID
+  static async getCheckInBySessionId(sessionId: string, userId: string): Promise<CheckInResponse | null> {
     try {
-      const promises = ids.map(id => this.deleteBookmark(id));
-      await Promise.all(promises);
+      const userCheckIns = await this.getUserCheckIns(userId);
+      return userCheckIns.find(checkIn => checkIn.code === sessionId) || null;
     } catch (error) {
-      console.error('Failed to delete multiple bookmarks:', error);
-      throw error;
+      console.error('Failed to get check-in by session ID:', error);
+      return null;
     }
   }
 
   // Health check method to verify API connectivity
   static async healthCheck(): Promise<boolean> {
     try {
-      await this.getAllBookmarks();
+      await this.getAllCheckIns();
       return true;
     } catch (error) {
-      console.warn('Bookmark service health check failed:', error);
+      console.warn('Check-in service health check failed:', error);
       return false;
     }
   }

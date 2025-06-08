@@ -25,23 +25,98 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// Router configuration
+// Error boundary component for better error handling
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Route error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+            <p className="text-gray-600 mb-4">Please refresh the page and try again.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Wrapper component for pages with error boundary
+const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ErrorBoundary>{children}</ErrorBoundary>
+);
+
+// Router configuration with improved error handling
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <MainLayout />,
+    errorElement: (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Page Not Found</h2>
+          <p className="text-gray-600 mb-4">The page you're looking for doesn't exist.</p>
+          <a
+            href="/"
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
+          >
+            Go Home
+          </a>
+        </div>
+      </div>
+    ),
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: (
+          <PageWrapper>
+            <HomePage />
+          </PageWrapper>
+        ),
       },
       {
         path: 'login',
-        element: <LoginPage />,
+        element: (
+          <PageWrapper>
+            <LoginPage />
+          </PageWrapper>
+        ),
       },
       {
         path: 'signup',
-        element: <RegistrationPage />,
+        element: (
+          <PageWrapper>
+            <RegistrationPage />
+          </PageWrapper>
+        ),
+      },
+      {
+        path: 'register', // Alternative path for signup
+        element: <Navigate to="/signup" replace />,
       },
       {
         path: 'logout',
@@ -49,13 +124,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sessions',
-        element: <SessionsPage />,
+        element: (
+          <PageWrapper>
+            <SessionsPage />
+          </PageWrapper>
+        ),
       },
       {
         path: 'calendar',
         element: (
           <ProtectedRoute>
-            <CalendarPage />
+            <PageWrapper>
+              <CalendarPage />
+            </PageWrapper>
           </ProtectedRoute>
         ),
       },
@@ -63,7 +144,9 @@ export const router = createBrowserRouter([
         path: 'bookmarks',
         element: (
           <ProtectedRoute>
-            <BookmarksPage />
+            <PageWrapper>
+              <BookmarksPage />
+            </PageWrapper>
           </ProtectedRoute>
         ),
       },
@@ -71,7 +154,9 @@ export const router = createBrowserRouter([
         path: 'profile',
         element: (
           <ProtectedRoute>
-            <ProfilePage />
+            <PageWrapper>
+              <ProfilePage />
+            </PageWrapper>
           </ProtectedRoute>
         ),
       },
@@ -79,7 +164,9 @@ export const router = createBrowserRouter([
         path: 'check-in',
         element: (
           <ProtectedRoute>
-            <CheckInPage />
+            <PageWrapper>
+              <CheckInPage />
+            </PageWrapper>
           </ProtectedRoute>
         ),
       },
@@ -87,25 +174,38 @@ export const router = createBrowserRouter([
         path: 'bingo',
         element: (
           <ProtectedRoute>
-            <BingoPage />
+            <PageWrapper>
+              <BingoPage />
+            </PageWrapper>
           </ProtectedRoute>
         ),
       },
       {
         path: 'sustainability',
-        // Temporarily removed ProtectedRoute wrapper for testing
-        element: <SustainabilityPage />,
+        element: (
+          <PageWrapper>
+            <SustainabilityPage />
+          </PageWrapper>
+        ),
       },
       {
         path: 'leaderboard',
-        element: <LeaderboardPage />,
+        element: (
+          <PageWrapper>
+            <LeaderboardPage />
+          </PageWrapper>
+        ),
       },
       {
         path: '*',
-        element: <Navigate to="/\" replace />,
+        element: <Navigate to="/" replace />,
       },
     ],
   },
-]);
+], {
+  future: {
+    v7_skipActionErrorRevalidation: true,
+  },
+});
 
 export default router;

@@ -9,8 +9,10 @@ import { GET_LEADERBOARD, ME } from '../graphql/queries';
 import { useAuth } from '../context/AuthContext';
 
 const LeaderboardPage: React.FC = () => {
-  const { user } = useAuth();
-  const { data: userData } = useQuery(ME);
+  const { user, isAuthenticated } = useAuth();
+  const { data: userData } = useQuery(ME, {
+    skip: !isAuthenticated // Only execute query when user is authenticated
+  });
   const currentUser = userData?.me;
   
   const { data, loading, error } = useQuery(GET_LEADERBOARD, {

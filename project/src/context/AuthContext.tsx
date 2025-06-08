@@ -7,9 +7,15 @@ interface User {
   firstName: string;
   lastName: string;
   fullName: string;
+  username: string;
   email: string;
   profilePicture?: string;
+  city?: string;
+  state?: string;
+  company?: string;
+  location?: string;
   role: 'USER' | 'ADMIN';
+  isEmailVerified: boolean;
   sustainabilityScore: number;
   badges: {
     id: string;
@@ -18,6 +24,8 @@ interface User {
     imageUrl: string;
   }[];
   checkedInEvents: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AuthState {
@@ -42,6 +50,9 @@ interface RegisterInput {
   email: string;
   password: string;
   username: string;
+  city?: string;
+  state?: string;
+  company?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -149,9 +160,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   firstName
                   lastName
                   fullName
+                  username
                   email
                   profilePicture
+                  city
+                  state
+                  company
+                  location
                   role
+                  isEmailVerified
                   createdAt
                   updatedAt
                 }
