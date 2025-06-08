@@ -155,3 +155,20 @@ export const GET_BINGO_STATS = gql`
     }
   }
 `;
+
+// Get default bingo game query
+export const GET_DEFAULT_BINGO_GAME = gql`
+  query GetDefaultBingoGame {
+    easyBingoItems {
+      id
+      text
+      position
+      category
+      points
+      isActive
+      createdBy
+      createdAt
+      updatedAt
+    }
+  }
+`;

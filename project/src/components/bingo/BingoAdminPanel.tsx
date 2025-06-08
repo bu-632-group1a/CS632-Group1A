@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, Save, X, BarChart3, Users, Trophy } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, BarChart3, Users, Trophy, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation } from '@apollo/client';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
@@ -36,10 +36,17 @@ const BingoAdminPanel: React.FC = () => {
     isActive: true
   });
 
-  const { data: itemsData, loading: itemsLoading, refetch: refetchItems } = useQuery(GET_BINGO_ITEMS);
-  const { data: statsData, loading: statsLoading } = useQuery(GET_BINGO_STATS);
-  const { data: leaderboardData, loading: leaderboardLoading } = useQuery(GET_BINGO_LEADERBOARD, {
-    variables: { limit: 10 }
+  const { data: itemsData, loading: itemsLoading, error: itemsError } = useQuery(GET_BINGO_ITEMS, {
+    errorPolicy: 'all'
+  });
+  
+  const { data: statsData, loading: statsLoading, error: statsError } = useQuery(GET_BINGO_STATS, {
+    errorPolicy: 'all'
+  });
+  
+  const { data: leaderboardData, loading: leaderboardLoading, error: leaderboardError } = useQuery(GET_BINGO_LEADERBOARD, {
+    variables: { limit: 10 },
+    errorPolicy: 'all'
   });
 
   const [createBingoItem, { loading: creating }] = useMutation(CREATE_BINGO_ITEM, {
@@ -161,6 +168,25 @@ const BingoAdminPanel: React.FC = () => {
     { id: 'leaderboard', label: 'Leaderboard', icon: <Trophy size={18} /> }
   ];
 
+  // Show error state if there are critical errors
+  if (itemsError && statsError && leaderboardError) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center text-red-700">
+            <AlertCircle size={20} className="mr-2" />
+            <div>
+              <h3 className="font-medium">Unable to load admin panel</h3>
+              <p className="text-sm text-red-600 mt-1">
+                There was an error connecting to the bingo service. Please try again later.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="bg-primary-50">
@@ -207,6 +233,20 @@ const BingoAdminPanel: React.FC = () => {
                   Add New Item
                 </Button>
               </div>
+
+              {itemsError && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center">
+                    <AlertCircle size={20} className="text-amber-600 mr-2" />
+                    <div>
+                      <h4 className="font-medium text-amber-900">Limited Functionality</h4>
+                      <p className="text-sm text-amber-800">
+                        Unable to load items from the server. You can still view cached data.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Create Form */}
               {showCreateForm && (
@@ -296,7 +336,7 @@ const BingoAdminPanel: React.FC = () => {
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mx-auto" />
                 </div>
-              ) : (
+              ) : bingoItems.length > 0 ? (
                 <div className="space-y-3">
                   {bingoItems
                     .sort((a: any, b: any) => a.position - b.position)
@@ -411,6 +451,10 @@ const BingoAdminPanel: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No bingo items found. Create your first item to get started.
+                </div>
               )}
             </motion.div>
           )}
@@ -429,6 +473,18 @@ const BingoAdminPanel: React.FC = () => {
               {statsLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mx-auto" />
+                </div>
+              ) : statsError ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <AlertCircle size={20} className="text-amber-600 mr-2" />
+                    <div>
+                      <h4 className="font-medium text-amber-900">Statistics Unavailable</h4>
+                      <p className="text-sm text-amber-800">
+                        Unable to load statistics from the server.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : stats ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -479,6 +535,18 @@ const BingoAdminPanel: React.FC = () => {
               {leaderboardLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mx-auto" />
+                </div>
+              ) : leaderboardError ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <AlertCircle size={20} className="text-amber-600 mr-2" />
+                    <div>
+                      <h4 className="font-medium text-amber-900">Leaderboard Unavailable</h4>
+                      <p className="text-sm text-amber-800">
+                        Unable to load leaderboard from the server.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : leaderboard.length > 0 ? (
                 <div className="space-y-3">

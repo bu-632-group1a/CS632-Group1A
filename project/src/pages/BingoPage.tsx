@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Award, Settings, Home, RefreshCw } from 'lucide-react';
+import { Award, Settings, Home, RefreshCw, ChevronDown, Gamepad2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import Card, { CardContent } from '../components/ui/Card';
@@ -11,18 +11,31 @@ import { GET_BINGO_ITEMS, GET_BINGO_GAME, ME } from '../graphql/queries';
 import { RESET_BINGO_GAME } from '../graphql/mutations';
 import { useAuth } from '../context/AuthContext';
 
+// Mock game types for the dropdown
+const GAME_TYPES = [
+  { id: 'default', name: 'Default Sustainability Bingo', description: 'Standard sustainability activities' },
+  { id: 'conference', name: 'Conference Activities', description: 'Conference-specific activities' },
+  { id: 'networking', name: 'Networking Bingo', description: 'Social and networking activities' },
+  { id: 'learning', name: 'Learning Objectives', description: 'Educational goals and achievements' }
+];
+
 const BingoPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [showAdminPanel, setShowAdminPanel] = React.useState(false);
+  const [selectedGameType, setSelectedGameType] = useState('default');
+  const [showGameSelector, setShowGameSelector] = useState(false);
   
   const { data: userData } = useQuery(ME, {
     skip: !isAuthenticated
   });
   
-  const { data: bingoItemsData, loading: itemsLoading, error: itemsError } = useQuery(GET_BINGO_ITEMS);
+  const { data: bingoItemsData, loading: itemsLoading, error: itemsError } = useQuery(GET_BINGO_ITEMS, {
+    errorPolicy: 'all'
+  });
+  
   const { data: bingoGameData, loading: gameLoading, error: gameError, refetch: refetchGame } = useQuery(GET_BINGO_GAME, {
     skip: !isAuthenticated,
-    errorPolicy: 'all' // Continue even if there's an error (e.g., no game exists yet)
+    errorPolicy: 'all'
   });
 
   const [resetBingoGame, { loading: resetting }] = useMutation(RESET_BINGO_GAME, {
@@ -40,9 +53,38 @@ const BingoPage: React.FC = () => {
   const bingoItems = bingoItemsData?.bingoItems || [];
   const bingoGame = bingoGameData?.bingoGame;
 
+  // Get selected game info
+  const selectedGame = GAME_TYPES.find(game => game.id === selectedGameType) || GAME_TYPES[0];
+
   // Transform GraphQL data to match existing BingoCard component interface
   const transformedItems = React.useMemo(() => {
-    if (!bingoItems.length) return [];
+    if (!bingoItems.length) {
+      // Create placeholder items for the default game
+      const placeholderItems = [
+        'Attend a keynote speech',
+        'Visit the innovation showcase', 
+        'Network with 3 new people',
+        'Ask a question during Q&A',
+        'Attend a panel discussion',
+        'Take public transit to the event',
+        'Share on social media',
+        'Visit all vendor demos',
+        'Use a reusable water bottle',
+        'Join the sustainability tour',
+        'Exchange contact info',
+        'Participate in a workshop',
+        'Take session notes',
+        'Learn about AI in PM',
+        'Meet a keynote speaker',
+        'Visit the heat exchange area'
+      ];
+
+      return placeholderItems.map((text, index) => ({
+        id: `placeholder-${index}`,
+        text,
+        completed: false
+      }));
+    }
     
     // Create a 4x4 grid (16 items) sorted by position
     const sortedItems = [...bingoItems]
@@ -91,6 +133,13 @@ const BingoPage: React.FC = () => {
     }
   };
 
+  const handleGameTypeChange = (gameType: string) => {
+    setSelectedGameType(gameType);
+    setShowGameSelector(false);
+    // In a real implementation, this would trigger a refetch with the new game type
+    console.log('Switching to game type:', gameType);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="text-center py-12">
@@ -104,7 +153,7 @@ const BingoPage: React.FC = () => {
     );
   }
 
-  if (itemsError || gameError) {
+  if (itemsError && gameError) {
     return (
       <div className="space-y-4">
         <div className="bg-red-50 p-4 rounded-lg">
@@ -179,6 +228,68 @@ const BingoPage: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Game Type Selector */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="bg-primary-100 p-2 rounded-full mr-3">
+                  <Gamepad2 size={20} className="text-primary-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">Game Type</h3>
+                  <p className="text-sm text-gray-600">Choose your bingo game variant</p>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <button
+                  onClick={() => setShowGameSelector(!showGameSelector)}
+                  className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="text-left">
+                    <div className="font-medium text-gray-900">{selectedGame.name}</div>
+                    <div className="text-xs text-gray-500">{selectedGame.description}</div>
+                  </div>
+                  <ChevronDown size={16} className={`text-gray-500 transition-transform ${showGameSelector ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showGameSelector && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+                  >
+                    {GAME_TYPES.map((game) => (
+                      <button
+                        key={game.id}
+                        onClick={() => handleGameTypeChange(game.id)}
+                        className={`
+                          w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg
+                          ${selectedGameType === game.id ? 'bg-primary-50 border-l-4 border-primary-500' : ''}
+                        `}
+                      >
+                        <div className="font-medium text-gray-900">{game.name}</div>
+                        <div className="text-sm text-gray-600">{game.description}</div>
+                        {selectedGameType === game.id && (
+                          <div className="text-xs text-primary-600 mt-1">Currently selected</div>
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Admin Panel */}
       {isAdmin && showAdminPanel && (
@@ -298,6 +409,7 @@ const BingoPage: React.FC = () => {
                 <li>• Each BINGO earns you bonus sustainability points</li>
                 <li>• Try to complete all squares for maximum points!</li>
                 <li>• Your progress is automatically saved</li>
+                <li>• Switch between different game types using the selector above</li>
               </ul>
             </div>
             

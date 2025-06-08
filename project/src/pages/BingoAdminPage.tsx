@@ -1,13 +1,40 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Home, Shield } from 'lucide-react';
+import { Settings, Home, Shield, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import BingoAdminPanel from '../components/bingo/BingoAdminPanel';
 import { useAuth } from '../context/AuthContext';
 
 const BingoAdminPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
+  // Check if user is authenticated and is admin
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle size={48} className="mx-auto mb-4 text-gray-400" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
+        <p className="text-gray-600 mb-6">You need to be signed in to access the admin panel.</p>
+        <Link to="/login">
+          <Button>Sign In</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (user?.role !== 'ADMIN') {
+    return (
+      <div className="text-center py-12">
+        <Shield size={48} className="mx-auto mb-4 text-gray-400" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+        <p className="text-gray-600 mb-6">You don't have permission to access the admin panel.</p>
+        <Link to="/">
+          <Button>Go Home</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <motion.div 
