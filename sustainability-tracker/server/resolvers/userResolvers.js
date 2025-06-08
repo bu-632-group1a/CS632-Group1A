@@ -221,47 +221,61 @@ const userResolvers = {
 
       const { token, newPassword } = input;
 
-      // Find user with valid reset token
-      const user = await User.findOne({
-        passwordResetExpires: { $gt: Date.now() },
-      });
-
-      if (!user) {
-        throw new GraphQLError('Invalid or expired reset token', {
-          extensions: { code: 'BAD_USER_INPUT' },
-        });
-      }
-
-      // Verify the token
-      const isValidToken = user.verifyPasswordResetToken(token);
-      if (!isValidToken) {
-        throw new GraphQLError('Invalid or expired reset token', {
-          extensions: { code: 'BAD_USER_INPUT' },
-        });
-      }
-
-      // Update password and clear reset token
-      user.password = newPassword;
-      user.clearPasswordResetToken();
-      
-      // Clear all refresh tokens for security
-      user.refreshTokens = [];
-      
-      await user.save();
-
-      // Send confirmation email (don't fail if this fails)
       try {
-        await sendPasswordResetConfirmationEmail(user.email, user.firstName);
-        console.log(`✅ Password reset confirmation email sent to ${user.email}`);
-      } catch (emailError) {
-        console.error('⚠️  Failed to send password reset confirmation email:', emailError.message);
-        // Don't fail the password reset if email sending fails
-      }
+        // Find all users with non-expired reset tokens
+        const users = await User.find({
+          passwordResetExpires: { $gt: Date.now() },
+          passwordResetToken: { $exists: true }
+        });
 
-      return {
-        success: true,
-        message: 'Password has been reset successfully. You can now log in with your new password.',
-      };
+        // Find the user with the matching token
+        let matchingUser = null;
+        for (const user of users) {
+          if (user.verifyPasswordResetToken(token)) {
+            matchingUser = user;
+            break;
+          }
+        }
+
+        if (!matchingUser) {
+          throw new GraphQLError('Invalid or expired reset token', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
+
+        // Update password and clear reset token
+        matchingUser.password = newPassword;
+        matchingUser.clearPasswordResetToken();
+        
+        // Clear all refresh tokens for security
+        matchingUser.refreshTokens = [];
+        
+        await matchingUser.save();
+
+        // Send confirmation email (don't fail if this fails)
+        try {
+          await sendPasswordResetConfirmationEmail(matchingUser.email, matchingUser.firstName);
+          console.log(`✅ Password reset confirmation email sent to ${matchingUser.email}`);
+        } catch (emailError) {
+          console.error('⚠️  Failed to send password reset confirmation email:', emailError.message);
+          // Don't fail the password reset if email sending fails
+        }
+
+        return {
+          success: true,
+          message: 'Password has been reset successfully. You can now log in with your new password.',
+        };
+      } catch (error) {
+        // If it's already a GraphQLError, re-throw it
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        
+        console.error('❌ Reset password error:', error);
+        throw new GraphQLError('An error occurred while resetting your password. Please try again.', {
+          extensions: { code: 'INTERNAL_ERROR' },
+        });
+      }
     },
 
     changePassword: async (_, { input }, context) => {
