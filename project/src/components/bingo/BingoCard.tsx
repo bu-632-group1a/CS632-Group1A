@@ -132,13 +132,13 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
           <motion.button
             key={item.id}
             className={`
-              w-full 
+              w-full
               aspect-square
               sm:min-h-[80px] md:min-h-[120px] lg:min-h-[160px]
               sm:min-w-[80px] md:min-w-[120px] lg:min-w-[160px]
-              flex items-center justify-center 
-              p-2 sm:p-3 md:p-4 
-              rounded-lg text-center 
+              flex items-center justify-center
+              p-2 sm:p-3 md:p-4
+              rounded-lg text-center
               text-[9px] sm:text-xs md:text-base lg:text-lg
               break-words whitespace-normal
               ${item.completed 
