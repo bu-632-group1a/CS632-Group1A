@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import SessionCard from '../components/sessions/SessionCard';
 import { useApolloClient } from '@apollo/client';
-import { GET_SUSTAINABILITY_ACTIONS } from '../graphql/queries';
+import { GET_SUSTAINABILITY_ACTIONS, GET_LEADERBOARD } from '../graphql/queries';
 import { AdminService } from '../services/adminService';
 
 const HomePage: React.FC = () => {
@@ -116,6 +116,21 @@ const HomePage: React.FC = () => {
     AdminService.healthCheck?.()
       .catch(() => { /* ignore errors */ });
   }, [apolloClient]);
+
+  useEffect(() => {
+    apolloClient.query({
+      query: GET_LEADERBOARD,
+      variables: { limit: 1 }, // keep it light
+      fetchPolicy: 'network-only',
+    }).catch(() => { /* ignore errors */ });
+  }, [apolloClient]);
+
+  useEffect(() => {
+    // Prewarm the backend with an unauthenticated REST call
+    fetch('https://cs632-session-manager.onrender.com/sessions', {
+      method: 'GET',
+    }).catch(() => { /* ignore errors */ });
+  }, []);
 
   return (
     <div className="space-y-8">
