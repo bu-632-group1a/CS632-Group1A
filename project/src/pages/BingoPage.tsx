@@ -185,55 +185,55 @@ const BingoPage: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 w-full">
-        <div>
-          <motion.h1 
-            className="text-3xl font-bold text-gray-900 mb-1"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            Sustainability Bingo
-          </motion.h1>
-          <motion.p 
-            className="text-gray-600"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            Complete activities to get a BINGO and earn bonus points!
-          </motion.p>
-        </div>
-        
-        <div className="flex flex-row flex-wrap items-center gap-2 justify-start md:justify-end w-full md:w-auto">
-          {isAdmin && (
-            <Button
-              variant={showAdminPanel ? "primary" : "outline"}
-              onClick={() => setShowAdminPanel(!showAdminPanel)}
-              icon={<Settings size={20} />}
-            >
-              {showAdminPanel ? 'Hide Admin' : 'Admin Panel'}
-            </Button>
-          )}
+      {/* Title and subtitle */}
+      <div>
+        <motion.h1 
+          className="text-3xl font-bold text-gray-900 mb-1"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          Sustainability Bingo
+        </motion.h1>
+        <motion.p 
+          className="text-gray-600"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          Complete activities to get a BINGO and earn bonus points!
+        </motion.p>
+      </div>
+
+      {/* Button group below title/subtitle */}
+      <div className="flex flex-row flex-wrap items-center gap-2 justify-start md:justify-start w-full">
+        {isAdmin && (
           <Button
-            variant="outline"
-            onClick={handleResetGame}
-            isLoading={resetting}
-            icon={<RefreshCw size={20} />}
+            variant={showAdminPanel ? "primary" : "outline"}
+            onClick={() => setShowAdminPanel(!showAdminPanel)}
+            icon={<Settings size={20} />}
+          >
+            {showAdminPanel ? 'Hide Admin' : 'Admin Panel'}
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          onClick={handleResetGame}
+          isLoading={resetting}
+          icon={<RefreshCw size={20} />}
+          className="text-gray-600 hover:text-gray-900"
+        >
+          Reset Game
+        </Button>
+        <Link to="/">
+          <Button
+            variant="ghost"
+            icon={<Home size={20} />}
             className="text-gray-600 hover:text-gray-900"
           >
-            Reset Game
+            Home
           </Button>
-          <Link to="/">
-            <Button
-              variant="ghost"
-              icon={<Home size={20} />}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              Home
-            </Button>
-          </Link>
-        </div>
+        </Link>
       </div>
 
       {/* Game Type Selector */}
