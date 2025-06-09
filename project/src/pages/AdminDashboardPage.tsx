@@ -494,12 +494,11 @@ const AdminDashboardPage: React.FC = () => {
                   )}
                 </div>
               </CardContent>
-              </CardContent>
-            </Card>div>
+            </Card>
           </motion.div>
         </>
       )}tion.div>
     </motion.div>
   );
 };
-export default AdminDashboardPage;export default AdminDashboardPage;
+export default AdminDashboardPage;
