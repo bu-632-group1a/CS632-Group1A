@@ -205,8 +205,7 @@ const BingoPage: React.FC = () => {
         </motion.p>
       </div>
 
-      {/* Button group below title/subtitle */}
-      <div className="flex flex-row flex-wrap items-center gap-2 justify-start md:justify-start w-full">
+      <div className="flex flex-row flex-wrap items-center gap-2 justify-start w-full mt-4">
         {isAdmin && (
           <Button
             variant={showAdminPanel ? "primary" : "outline"}
