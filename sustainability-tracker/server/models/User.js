@@ -144,7 +144,7 @@ userSchema.methods.verifyEmailToken = function(token) {
 userSchema.methods.generatePasswordResetToken = function() {
   const token = crypto.randomBytes(32).toString('hex');
   this.passwordResetToken = crypto.createHash('sha256').update(token).digest('hex');
-  this.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
   return token;
 };
 
