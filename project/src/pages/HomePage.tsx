@@ -58,7 +58,7 @@ const HomePage: React.FC = () => {
       },
       {
         icon: <Bookmark className="w-8 h-8 text-primary-600" />,
-        title: "Add Session Bookmarks",
+        title: "View Session Bookmarks",
         description: "Save sessions for later",
         link: "/bookmarks"
       },

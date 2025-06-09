@@ -24,7 +24,7 @@ const MobileNav: React.FC = () => {
 
     const authenticatedItems = [
       { label: 'My Calendar', icon: <CalendarDays size={20} />, path: '/calendar' },
-      { label: 'Add Session Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
+      { label: 'View Session Bookmarks', icon: <Bookmark size={20} />, path: '/bookmarks' },
       { label: 'Track Sustainability Actions', icon: <Leaf size={20} />, path: '/sustainability' },
       { label: 'Manage User Profile', icon: <Layout size={20} />, path: '/profile' },
       { label: 'Session Check-In', icon: <CheckSquare size={20} />, path: '/check-in' },
