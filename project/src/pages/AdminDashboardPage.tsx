@@ -25,7 +25,7 @@ const AdminDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
+const [allUsers, setAllUsers] = useState<{ userId: string; fullName: string }[]>([]);
   // Filters
   const [userFilter, setUserFilter] = useState('');
   const [sortBy, setSortBy] = useState<'bookmarks' | 'checkins' | 'engagement' | 'total'>('total');
@@ -42,18 +42,28 @@ const AdminDashboardPage: React.FC = () => {
     return lookup;
   }, []);
 
+  const userNameLookup = useMemo(() => {
+    const lookup: Record<string, string> = {};
+    allUsers.forEach(user => {
+      lookup[user.userId] = user.fullName;
+    });
+    return lookup;
+  }, [allUsers]);
   const loadDashboardData = async (showLoader = true) => {
     if (showLoader) setLoading(true);
     setError(null);
 
     try {
-      const [stats, analytics] = await Promise.all([
+      const [stats, analytics, users] = await Promise.all([
         AdminService.getDashboardStats(),
-        AdminService.getUserAnalytics()
+        AdminService.getUserAnalytics(),
+        AdminService.getAllUsers() // <-- Add this
       ]);
 
       setDashboardStats(stats);
       setUserAnalytics(analytics);
+      setAllUsers(users); // <-- Add this
+
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
@@ -477,7 +487,7 @@ const AdminDashboardPage: React.FC = () => {
                             </div>
                             <div>
                               <h3 className="font-medium text-gray-900">
-                                {user.fullName || `${user.fullName}`}
+                                {user.fullName || userNameLookup[user.userId] || "N/A"}
                               </h3>
                               <p className="text-sm text-gray-600">ID: {user.userId}</p>
                             </div>
