@@ -470,7 +470,7 @@ const AdminDashboardPage: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div className="flex items-center">
                             <div className="bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center mr-3">
                               <UserCheck size={20} className="text-gray-600" />
@@ -479,8 +479,8 @@ const AdminDashboardPage: React.FC = () => {
                               <p className="text-sm text-gray-600">ID: {user.userId}</p>
                             </div>
                           </div>
-                          
-                          <div className="flex items-center gap-6">
+                          {/* Analytics: stack vertically on mobile, horizontally on desktop */}
+                          <div className="flex flex-col xs:flex-row sm:flex-row gap-2 sm:gap-6 mt-2 sm:mt-0">
                             <div className="text-center">
                               <div className="text-lg font-bold text-green-600">{user.bookmarksCount}</div>
                               <div className="text-xs text-gray-500">Bookmarks</div>
