@@ -1,5 +1,4 @@
 import { mockSessions } from '../data/mockData'; // Add this import at the top if not present
-
 interface AdminBookmark {
   id: number;
   code: string;
@@ -127,16 +126,6 @@ class AdminServiceClass {
       throw new Error('Network error. Please check your connection and try again.');
     }
   }
-
-  async getAllUsers(): Promise<{ userId: string; fullName: string }[]> {
-  try {
-    // Adjust the endpoint to your actual API route for all users
-    return await this.makeRequest<{ userId: string; fullName: string }[]>(`${API_BASE_URL}/users/admin`);
-  } catch (error) {
-    console.error('Failed to fetch users:', error);
-    throw error;
-  }
-}
 
   // Update these methods to use the new admin endpoints
   async getAllBookmarks(): Promise<AdminBookmark[]> {
