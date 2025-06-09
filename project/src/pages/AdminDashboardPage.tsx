@@ -22,6 +22,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [userAnalytics, setUserAnalytics] = useState<UserAnalytics[]>([]);
+  const [allUsers, setAllUsers] = useState<{ userId: string; fullName: string }[]>([]); // <-- Add this line
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -34,29 +35,30 @@ const AdminDashboardPage: React.FC = () => {
   // Check if user is admin
   const isAdmin = currentUser?.role === 'ADMIN' || user?.role === 'ADMIN';
 
-  const sessionNameLookup = useMemo(() => {
+  const userNameLookup = useMemo(() => {
     const lookup: Record<string, string> = {};
-    mockSessions.forEach((session: { id: string; title: string }) => {
-      lookup[String(session.id)] = session.title;
+    allUsers.forEach(user => {
+      lookup[user.userId] = user.fullName;
     });
     return lookup;
-  }, []);
+  }, [allUsers]);
 
   const loadDashboardData = async (showLoader = true) => {
     if (showLoader) setLoading(true);
     setError(null);
 
     try {
-      const [stats, analytics] = await Promise.all([
+      const [stats, analytics, users] = await Promise.all([
         AdminService.getDashboardStats(),
-        AdminService.getUserAnalytics()
+        AdminService.getUserAnalytics(),
+        AdminService.getAllUsers() // <-- Add this line
       ]);
 
       setDashboardStats(stats);
       setUserAnalytics(analytics);
+      setAllUsers(users); // <-- Add this line
     } catch (err) {
-      console.error('Failed to load dashboard data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      // ...
     } finally {
       setLoading(false);
     }
@@ -477,7 +479,7 @@ const AdminDashboardPage: React.FC = () => {
                             </div>
                             <div>
                               <h3 className="font-medium text-gray-900">
-                                {user.fullName || `${user.fullName}`}
+                                {user.fullName || userNameLookup[user.userId] || "N/A"}
                               </h3>
                               <p className="text-sm text-gray-600">ID: {user.userId}</p>
                             </div>
