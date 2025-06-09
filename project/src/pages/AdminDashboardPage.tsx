@@ -14,7 +14,7 @@ import Badge from '../components/ui/Badge';
 import { useAuth } from '../context/AuthContext';
 import { AdminService, UserAnalytics, DashboardStats } from '../services/adminService';
 import { ME } from '../graphql/queries';
-
+import mockSessions from '../data/mockSessions';
 const AdminDashboardPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { data: userData } = useQuery(ME, { skip: !isAuthenticated });
@@ -34,6 +34,14 @@ const AdminDashboardPage: React.FC = () => {
   // Check if user is admin
   const isAdmin = currentUser?.role === 'ADMIN' || user?.role === 'ADMIN';
 
+    const sessionNameLookup = useMemo(() => {
+    const lookup: Record<string, string> = {};
+    mockSessions.forEach((session: { sessionCode: string; sessionName: string }) => {
+      lookup[session.sessionCode] = session.sessionName;
+    });
+    return lookup;
+  }, []);
+  
   const loadDashboardData = async (showLoader = true) => {
     if (showLoader) setLoading(true);
     setError(null);
@@ -353,7 +361,7 @@ const AdminDashboardPage: React.FC = () => {
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-900 flex items-center gap-2">
-                              {session.sessionName}
+                              {sessionNameLookup[session.sessionCode] || "N/A"}
                               <span className="text-xs text-gray-500 font-normal">
                                 (ID: {session.sessionCode})
                               </span>
