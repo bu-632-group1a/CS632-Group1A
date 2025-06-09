@@ -195,15 +195,14 @@ const AdminDashboardPage: React.FC = () => {
     >
       {/* Header */}
       <motion.div 
-        className="flex justify-between items-center"
+        className="space-y-2"
         variants={itemVariants}
       >
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Admin Dashboard</h1>
           <p className="text-gray-600">Session bookmarks and attendance analytics</p>
         </div>
-        
-        <div className="flex items-center gap-3">
+        <div className="flex flex-row flex-wrap items-center gap-2 justify-start w-full mt-2">
           <div className="flex items-center bg-primary-50 px-3 py-2 rounded-lg">
             <Shield size={16} className="text-primary-600 mr-2" />
             <span className="text-sm font-medium text-primary-800">
@@ -495,12 +494,12 @@ const AdminDashboardPage: React.FC = () => {
                   )}
                 </div>
               </CardContent>
-            </Card>
+              </CardContent>
+            </Card>div>
           </motion.div>
         </>
-      )}
+      )}tion.div>
     </motion.div>
   );
 };
-
-export default AdminDashboardPage;
+export default AdminDashboardPage;export default AdminDashboardPage;

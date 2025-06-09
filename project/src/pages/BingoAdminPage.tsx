@@ -43,54 +43,55 @@ const BingoAdminPage: React.FC = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex justify-between items-center">
-        <div>
-          <motion.h1 
-            className="text-3xl font-bold text-gray-900 mb-1"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            Bingo Administration
-          </motion.h1>
-          <motion.p 
-            className="text-gray-600"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            Manage bingo items, view statistics, and monitor player progress
-          </motion.p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-primary-50 px-3 py-2 rounded-lg">
-            <Shield size={16} className="text-primary-600 mr-2" />
-            <span className="text-sm font-medium text-primary-800">
-              Admin: {user?.fullName}
-            </span>
-          </div>
-          <Link to="/bingo">
-            <Button
-              variant="outline"
-              icon={<Settings size={20} />}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              Player View
-            </Button>
-          </Link>
-          <Link to="/">
-            <Button
-              variant="ghost"
-              icon={<Home size={20} />}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              Home
-            </Button>
-          </Link>
-        </div>
+      {/* Title and subtitle */}
+      <div>
+        <motion.h1 
+          className="text-3xl font-bold text-gray-900 mb-1"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          Bingo Administration
+        </motion.h1>
+        <motion.p 
+          className="text-gray-600"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          Manage bingo items, view statistics, and monitor player progress
+        </motion.p>
       </div>
 
+      {/* Button group below headers */}
+      <div className="flex flex-row flex-wrap items-center gap-2 justify-start w-full mt-4">
+        <div className="flex items-center bg-primary-50 px-3 py-2 rounded-lg">
+          <Shield size={16} className="text-primary-600 mr-2" />
+          <span className="text-sm font-medium text-primary-800">
+            Admin: {user?.fullName}
+          </span>
+        </div>
+        <Link to="/bingo">
+          <Button
+            variant="outline"
+            icon={<Settings size={20} />}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            Player View
+          </Button>
+        </Link>
+        <Link to="/">
+          <Button
+            variant="ghost"
+            icon={<Home size={20} />}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            Home
+          </Button>
+        </Link>
+      </div>
+
+      {/* Admin Panel */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
