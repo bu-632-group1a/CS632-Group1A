@@ -84,9 +84,8 @@ const LeaderboardPage: React.FC = () => {
             const medalColor = rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-400' : 'text-amber-600';
             
             // Display name logic: prefer name, fallback to formatted userId
+            const displayName = entry.name || `${entry.userId}`;
             console.log(`Entry: ${JSON.stringify(entry)}`);
-            const displayName = entry.name || `${entry.fullName}`;
-            
             return (
               <motion.div 
                 key={entry.userId}
