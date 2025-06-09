@@ -462,7 +462,7 @@ const AdminDashboardPage: React.FC = () => {
                             </div>
                             <div>
                               <h3 className="font-medium text-gray-900">
-                                {user.fullName || `User ${user.userId}`}
+                                {user.fullName || `${user.fullName}`}
                               </h3>
                               <p className="text-sm text-gray-600">ID: {user.userId}</p>
                             </div>
