@@ -63,8 +63,8 @@ const BingoAdminPage: React.FC = () => {
         </motion.p>
       </div>
 
-      {/* Button group below headers */}
-      <div className="flex flex-row flex-wrap items-center gap-2 justify-start w-full mt-4">
+      {/* Admin badge and buttons below headers, stacked on mobile */}
+      <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2 justify-start w-full mt-4">
         <div className="flex items-center bg-primary-50 px-3 py-2 rounded-lg">
           <Shield size={16} className="text-primary-600 mr-2" />
           <span className="text-sm font-medium text-primary-800">

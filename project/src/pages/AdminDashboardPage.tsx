@@ -202,7 +202,7 @@ const AdminDashboardPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Admin Dashboard</h1>
           <p className="text-gray-600">Session bookmarks and attendance analytics</p>
         </div>
-        <div className="flex flex-row flex-wrap items-center gap-2 justify-start w-full mt-2">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2 justify-start w-full mt-2">
           <div className="flex items-center bg-primary-50 px-3 py-2 rounded-lg">
             <Shield size={16} className="text-primary-600 mr-2" />
             <span className="text-sm font-medium text-primary-800">
