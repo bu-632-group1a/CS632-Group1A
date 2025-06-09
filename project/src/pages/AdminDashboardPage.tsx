@@ -325,45 +325,53 @@ const AdminDashboardPage: React.FC = () => {
             </Card>
           </motion.div>
 
-          {/* Top Sessions */}
+          {/* Top Sessions by Check-ins */}
           <motion.div variants={itemVariants}>
             <Card>
               <CardHeader className="bg-secondary-50">
                 <div className="flex items-center">
                   <Calendar size={24} className="text-secondary-600 mr-3" />
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Top Sessions</h2>
-                    <p className="text-sm text-gray-600">Most popular sessions by engagement</p>
+                    <h2 className="text-xl font-bold text-gray-900">Top Sessions by Check-ins</h2>
+                    <p className="text-sm text-gray-600">Sessions with the most check-ins</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-3">
-                  {dashboardStats?.topSessions.slice(0, 5).map((session, index) => (
-                    <div key={session.sessionCode} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-secondary-100 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-sm font-bold text-secondary-600">
-                            {index + 1}
-                          </span>
+                  {dashboardStats?.topSessions
+                    ?.filter(session => session.checkInsCount > 0)
+                    .sort((a, b) => b.checkInsCount - a.checkInsCount)
+                    .slice(0, 5)
+                    .map((session, index) => (
+                      <div key={session.sessionCode} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-secondary-100 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-sm font-bold text-secondary-600">
+                              {index + 1}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-gray-900">{session.sessionName}</h3>
+                            <p className="text-sm text-gray-600">Session ID: {session.sessionCode}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium text-gray-900">{session.sessionName}</h3>
-                          <p className="text-sm text-gray-600">Session ID: {session.sessionCode}</p>
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-purple-600">{session.checkInsCount}</div>
+                            <div className="text-xs text-gray-500">Check-ins</div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-green-600">{session.bookmarksCount}</div>
-                          <div className="text-xs text-gray-500">Bookmarks</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-purple-600">{session.checkInsCount}</div>
-                          <div className="text-xs text-gray-500">Check-ins</div>
-                        </div>
-                      </div>
-                    </div>
                   ))}
+                  {/* Show a message if there are no sessions with check-ins */}
+                  {dashboardStats?.topSessions?.filter(session => session.checkInsCount > 0).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Eye size={48} className="mx-auto mb-4 text-gray-400" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No sessions with check-ins found</h3>
+                      <p className="text-gray-600">No session check-in data available.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
