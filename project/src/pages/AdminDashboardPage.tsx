@@ -352,8 +352,12 @@ const AdminDashboardPage: React.FC = () => {
                             </span>
                           </div>
                           <div>
-                            <h3 className="font-medium text-gray-900">{session.sessionName}</h3>
-                            <p className="text-sm text-gray-600">Session ID: {session.sessionCode}</p>
+                            <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                              {session.sessionName}
+                              <span className="text-xs text-gray-500 font-normal">
+                                (ID: {session.sessionCode})
+                              </span>
+                            </h3>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
