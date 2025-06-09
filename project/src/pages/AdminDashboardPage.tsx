@@ -34,14 +34,14 @@ const AdminDashboardPage: React.FC = () => {
   // Check if user is admin
   const isAdmin = currentUser?.role === 'ADMIN' || user?.role === 'ADMIN';
 
-    const sessionNameLookup = useMemo(() => {
+  const sessionNameLookup = useMemo(() => {
     const lookup: Record<string, string> = {};
-    mockSessions.forEach((session: { sessionCode: string; sessionName: string }) => {
-      lookup[session.sessionCode] = session.sessionName;
+    mockSessions.forEach((session: { id: string; title: string }) => {
+      lookup[String(session.id)] = session.title;
     });
     return lookup;
   }, []);
-  
+
   const loadDashboardData = async (showLoader = true) => {
     if (showLoader) setLoading(true);
     setError(null);
@@ -360,12 +360,12 @@ const AdminDashboardPage: React.FC = () => {
                             </span>
                           </div>
                           <div>
-                            <h3 className="font-medium text-gray-900 flex items-center gap-2">
-                              {sessionNameLookup[session.sessionCode] || "N/A"}
-                              <span className="text-xs text-gray-500 font-normal">
-                                (ID: {session.sessionCode})
-                              </span>
-                            </h3>
+                          <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                            {sessionNameLookup[String(session.sessionCode)] || "N/A"}
+                            <span className="text-xs text-gray-500 font-normal">
+                              (ID: {session.sessionCode})
+                            </span>
+                          </h3>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
