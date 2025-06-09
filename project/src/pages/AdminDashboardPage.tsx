@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { AdminService, UserAnalytics, DashboardStats } from '../services/adminService';
 import { ME } from '../graphql/queries';
 import { mockSessions } from '../data/mockData';
-const AdminDashboardPage: React.FC = () => {
+  const AdminDashboardPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { data: userData } = useQuery(ME, { skip: !isAuthenticated });
   const currentUser = userData?.me;
