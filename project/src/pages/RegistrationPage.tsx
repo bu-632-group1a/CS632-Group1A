@@ -10,7 +10,7 @@ import Modal from '../components/ui/Modal'; // Make sure you have a Modal compon
 
 const RegistrationPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register, loading, isAuthenticated } = useAuth();
+  const { register, loading, isAuthenticated, logout } = useAuth();
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [isPageReady, setIsPageReady] = useState(false);
@@ -129,12 +129,15 @@ const RegistrationPage: React.FC = () => {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
-        username: formData.username.trim().toLowerCase(),
         password: formData.password,
+        username: formData.username.trim().toLowerCase(),
         city: formData.city.trim() || undefined,
         state: formData.state.trim() || undefined,
         company: formData.company.trim() || undefined
       });
+
+      // Immediately log out and clear cache after registration
+      await logout();
 
       // Show verify email modal instead of redirecting immediately
       setShowVerifyModal(true);
