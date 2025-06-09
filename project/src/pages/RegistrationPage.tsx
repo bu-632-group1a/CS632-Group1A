@@ -29,7 +29,7 @@ const RegistrationPage: React.FC = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !showVerifyModal) {
       navigate('/', { replace: true });
       return;
     }
@@ -40,7 +40,7 @@ const RegistrationPage: React.FC = () => {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, showVerifyModal, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
