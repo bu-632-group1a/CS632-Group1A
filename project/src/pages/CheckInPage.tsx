@@ -511,7 +511,7 @@ const CheckInPage: React.FC = () => {
                               </p>
                             </div>
                             
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-2">
                               <div className="text-sm text-gray-500">
                                 {new Date(session.date).toLocaleDateString('en-US', { 
                                   weekday: 'long',
