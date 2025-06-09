@@ -476,9 +476,6 @@ const AdminDashboardPage: React.FC = () => {
                               <UserCheck size={20} className="text-gray-600" />
                             </div>
                             <div>
-                              <h3 className="font-medium text-gray-900">
-                                {user.fullName || `${user.fullName}`}
-                              </h3>
                               <p className="text-sm text-gray-600">ID: {user.userId}</p>
                             </div>
                           </div>
