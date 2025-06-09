@@ -1,3 +1,5 @@
+import { mockSessions } from '../data/mockData'; // Add this import at the top if not present
+
 interface AdminBookmark {
   id: number;
   code: string;
@@ -147,14 +149,10 @@ class AdminServiceClass {
     }
   }
 
-  async getAllSessions(): Promise<AdminSession[]> {
-    try {
-      return await this.makeRequest<AdminSession[]>(SESSIONS_BASE_URL);
-    } catch (error) {
-      console.error('Failed to fetch sessions:', error);
-      throw error;
-    }
-  }
+async getAllSessions(): Promise<AdminSession[]> {
+  // Return mock session data instead of making an API call
+  return Promise.resolve(mockSessions);
+}
 
   async getDashboardStats(): Promise<DashboardStats> {
     try {
