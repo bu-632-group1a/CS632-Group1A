@@ -126,9 +126,11 @@ class AdminServiceClass {
     }
   }
 
+  // Update these methods to use the new admin endpoints
   async getAllBookmarks(): Promise<AdminBookmark[]> {
     try {
-      return await this.makeRequest<AdminBookmark[]>(`${API_BASE_URL}/bookmarks`);
+      // Use the admin endpoint for all bookmarks
+      return await this.makeRequest<AdminBookmark[]>(`${API_BASE_URL}/bookmarks/admin`);
     } catch (error) {
       console.error('Failed to fetch bookmarks:', error);
       throw error;
@@ -137,7 +139,8 @@ class AdminServiceClass {
 
   async getAllCheckIns(): Promise<AdminCheckIn[]> {
     try {
-      return await this.makeRequest<AdminCheckIn[]>(`${API_BASE_URL}/checkins`);
+      // Use the admin endpoint for all check-ins
+      return await this.makeRequest<AdminCheckIn[]>(`${API_BASE_URL}/checkins/admin`);
     } catch (error) {
       console.error('Failed to fetch check-ins:', error);
       throw error;
