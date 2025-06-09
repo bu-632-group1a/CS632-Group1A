@@ -497,7 +497,7 @@ const AdminDashboardPage: React.FC = () => {
             </Card>
           </motion.div>
         </>
-      )}tion.div>
+      )}
     </motion.div>
   );
 };
