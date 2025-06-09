@@ -194,6 +194,9 @@ const AdminDashboardPage: React.FC = () => {
     visible: { opacity: 1, y: 0 }
   };
 
+  console.log('mockSessions', mockSessions);
+  console.log('topSessions', dashboardStats?.topSessions);
+
   return (
     <motion.div 
       className="space-y-6"
