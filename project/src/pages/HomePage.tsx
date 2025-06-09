@@ -236,38 +236,7 @@ const HomePage: React.FC = () => {
               <p className="text-gray-600">Your conference journey continues.</p>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="bg-primary-50 rounded-lg p-4 flex items-center">
-              <div className="bg-primary-100 p-2 rounded-lg mr-3">
-                <Badge size={20} className="text-primary-700" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Points Earned</p>
-                <p className="text-lg font-bold text-primary-700">{user.sustainabilityScore ?? 0} pts</p>
-              </div>
-            </div>
-            
-            <div className="bg-secondary-50 rounded-lg p-4 flex items-center">
-              <div className="bg-secondary-100 p-2 rounded-lg mr-3">
-                <Award size={20} className="text-secondary-700" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Badges Earned</p>
-                <p className="text-lg font-bold text-secondary-700">{user.badges?.length ?? 0}</p>
-              </div>
-            </div>
-            
-            <div className="bg-accent-50 rounded-lg p-4 flex items-center">
-              <div className="bg-accent-100 p-2 rounded-lg mr-3">
-                <Calendar size={20} className="text-accent-700" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Sessions Attended</p>
-                <p className="text-lg font-bold text-accent-700">{user.checkedInEvents?.length ?? 0}</p>
-              </div>
-            </div>
-          </div>
+      
           
           <div className="flex justify-end">
             <Link to="/profile">
