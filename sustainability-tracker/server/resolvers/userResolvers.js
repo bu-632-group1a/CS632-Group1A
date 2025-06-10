@@ -1,5 +1,6 @@
 import { GraphQLError } from 'graphql';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import User from '../models/User.js';
 import { 
   validateRegister, 
@@ -225,43 +226,33 @@ const userResolvers = {
       const { token, newPassword } = input;
 
       try {
-        // Find all users with non-expired reset tokens
-        const users = await User.find({
-          passwordResetExpires: { $gt: Date.now() },
-          passwordResetToken: { $exists: true }
+        // Hash the incoming token
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        // Find the user with the matching hashed token and non-expired token
+        const user = await User.findOne({
+          passwordResetToken: hashedToken,
+          passwordResetExpires: { $gt: Date.now() }
         });
 
-        // Find the user with the matching token
-        let matchingUser = null;
-        for (const user of users) {
-          if (user.verifyPasswordResetToken(token)) {
-            matchingUser = user;
-            break;
-          }
-        }
-
-        if (!matchingUser) {
+        if (!user) {
           throw new GraphQLError('Invalid or expired reset token', {
             extensions: { code: 'BAD_USER_INPUT' },
           });
         }
 
         // Update password and clear reset token
-        matchingUser.password = newPassword;
-        matchingUser.clearPasswordResetToken();
-        
-        // Clear all refresh tokens for security
-        matchingUser.refreshTokens = [];
-        
-        await matchingUser.save();
+        user.password = newPassword;
+        user.clearPasswordResetToken();
+        user.refreshTokens = [];
+        await user.save();
 
         // Send confirmation email (don't fail if this fails)
         try {
-          await sendPasswordResetConfirmationEmail(matchingUser.email, matchingUser.firstName);
-          console.log(`✅ Password reset confirmation email sent to ${matchingUser.email}`);
+          await sendPasswordResetConfirmationEmail(user.email, user.firstName);
+          console.log(`✅ Password reset confirmation email sent to ${user.email}`);
         } catch (emailError) {
           console.error('⚠️  Failed to send password reset confirmation email:', emailError.message);
-          // Don't fail the password reset if email sending fails
         }
 
         return {
@@ -269,11 +260,9 @@ const userResolvers = {
           message: 'Password has been reset successfully. You can now log in with your new password.',
         };
       } catch (error) {
-        // If it's already a GraphQLError, re-throw it
         if (error instanceof GraphQLError) {
           throw error;
         }
-        
         console.error('❌ Reset password error:', error);
         throw new GraphQLError('An error occurred while resetting your password. Please try again.', {
           extensions: { code: 'INTERNAL_ERROR' },
