@@ -8,11 +8,11 @@ import { GET_BINGO_GAME } from '../../graphql/queries';
 interface BingoCardProps {
   items: BingoItem[];
   onBingoAchieved?: () => void;
+  onGameComplete?: () => void;
 }
 
-const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved }) => {
+const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameComplete }) => {
   const [hasWon, setHasWon] = useState(false);
-
   const [toggleBingoItem, { loading }] = useMutation(TOGGLE_BINGO_ITEM, {
     refetchQueries: [{ query: GET_BINGO_GAME }],
     onError: (error) => {
@@ -38,53 +38,22 @@ const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved }) => {
   const hasBingo = (): boolean => {
     if (items.length !== 16) return false;
 
-    // Check rows
     for (let i = 0; i < 4; i++) {
-      if (
-        items[i * 4].completed &&
-        items[i * 4 + 1].completed &&
-        items[i * 4 + 2].completed &&
-        items[i * 4 + 3].completed
-      ) {
-        return true;
-      }
+      if (items[i * 4].completed && items[i * 4 + 1].completed && items[i * 4 + 2].completed && items[i * 4 + 3].completed) return true;
+      if (items[i].completed && items[i + 4].completed && items[i + 8].completed && items[i + 12].completed) return true;
     }
 
-    // Check columns
-    for (let i = 0; i < 4; i++) {
-      if (
-        items[i].completed &&
-        items[i + 4].completed &&
-        items[i + 8].completed &&
-        items[i + 12].completed
-      ) {
-        return true;
-      }
-    }
-
-    // Check diagonals
-    if (
-      items[0].completed &&
-      items[5].completed &&
-      items[10].completed &&
-      items[15].completed
-    ) {
-      return true;
-    }
-
-    if (
-      items[3].completed &&
-      items[6].completed &&
-      items[9].completed &&
-      items[12].completed
-    ) {
-      return true;
-    }
+    if (items[0].completed && items[5].completed && items[10].completed && items[15].completed) return true;
+    if (items[3].completed && items[6].completed && items[9].completed && items[12].completed) return true;
 
     return false;
   };
 
   useEffect(() => {
+    const allCompleted = items.every((item) => item.completed);
+    if (allCompleted) {
+      onGameComplete?.();
+    }
     if (!hasWon && hasBingo()) {
       setHasWon(true);
       onBingoAchieved?.();
