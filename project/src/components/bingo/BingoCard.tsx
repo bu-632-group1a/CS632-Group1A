@@ -57,6 +57,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameCom
     if (!hasWon && hasBingo()) {
       setHasWon(true);
       onBingoAchieved?.();
+      onGameComplete?.(); // Call this here if you want game complete on bingo
     }
   }, [items, hasWon]);
 
