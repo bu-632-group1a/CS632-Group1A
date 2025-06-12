@@ -232,7 +232,7 @@ const HomePage: React.FC = () => {
               className="w-12 h-12 rounded-full object-cover border-2 border-primary-100"
             />
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Welcome back, {user.firstName}!</h2>
+              <h2 className="text-xl font-bold text-gray-900">Welcome, {user.firstName}!</h2>
               <p className="text-gray-600">Your conference journey continues.</p>
             </div>
           </div>

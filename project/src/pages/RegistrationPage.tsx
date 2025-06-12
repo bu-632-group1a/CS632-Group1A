@@ -56,14 +56,23 @@ const RegistrationPage: React.FC = () => {
     return emailRegex.test(email);
   };
 
+
   const validateStep1 = () => {
-    const { firstName, lastName, username, email } = formData;
+    const { firstName, lastName, email } = formData;
     return firstName.trim() && 
            lastName.trim() && 
-           username.trim() && 
            email.trim() && 
            validateEmail(email);
   };
+
+  // const validateStep1 = () => {
+  //   const { firstName, lastName, username, email } = formData;
+  //   return firstName.trim() && 
+  //          lastName.trim() && 
+  //          username.trim() && 
+  //          email.trim() && 
+  //          validateEmail(email);
+  // };
 
   const validateStep2 = () => {
     const { password, confirmPassword } = formData;
@@ -77,8 +86,8 @@ const RegistrationPage: React.FC = () => {
       if (!validateStep1()) {
         if (!formData.firstName.trim() || !formData.lastName.trim()) {
           setError('Please enter your first and last name');
-        } else if (!formData.username.trim()) {
-          setError('Please enter a username');
+        // } else if (!formData.username.trim()) {
+        //   setError('Please enter a username');
         } else if (!formData.email.trim()) {
           setError('Please enter your email address');
         } else if (!validateEmail(formData.email)) {
@@ -125,16 +134,28 @@ const RegistrationPage: React.FC = () => {
     }
 
     try {
-      await register({
+    // Decoupling the registration input and programmaticaly setting the username to the email address
+    const registrationDetails = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        username: formData.username.trim().toLowerCase(),
+        username: formData.email.trim().toLowerCase(),
         city: formData.city.trim() || undefined,
         state: formData.state.trim() || undefined,
         company: formData.company.trim() || undefined
-      });
+    };
+    console.log(registrationDetails)
+      await register({
+        firstName: registrationDetails.firstName,
+        lastName: registrationDetails.lastName,
+        email: registrationDetails.email,
+        password: registrationDetails.password,
+        username: registrationDetails.username,
+        city: registrationDetails.city,
+        state: registrationDetails.state,
+        company: registrationDetails.company
+        });
 
       // Immediately log out and clear cache after registration
       await logout();
@@ -152,7 +173,7 @@ const RegistrationPage: React.FC = () => {
       } else if (err.networkError?.statusCode === 400) {
         errorMessage = 'Invalid registration data. Please check your information.';
       } else if (err.networkError?.statusCode === 409) {
-        errorMessage = 'An account with this email or username already exists.';
+        errorMessage = 'An account with this email already exists.';
       } else if (err.message) {
         errorMessage = err.message;
       }
@@ -160,7 +181,8 @@ const RegistrationPage: React.FC = () => {
       setError(errorMessage);
       
       // If it's a duplicate email/username error, go back to step 1
-      if (errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('username')) {
+      // if (errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('username')) {
+      if (errorMessage.toLowerCase().includes('email')) {
         setCurrentStep(1);
       }
     }
@@ -288,7 +310,7 @@ const RegistrationPage: React.FC = () => {
                       />
                     </div>
                     
-                    <Input
+                    {/* <Input
                       label="Username"
                       type="text"
                       id="username"
@@ -298,7 +320,7 @@ const RegistrationPage: React.FC = () => {
                       onChange={handleChange}
                       required
                       icon={<AtSign size={18} />}
-                    />
+                    /> */}
                     
                     <Input
                       label="Email Address"

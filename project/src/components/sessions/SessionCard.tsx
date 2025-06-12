@@ -206,7 +206,7 @@ const SessionCard: React.FC<SessionCardProps> = memo(({ session }) => {
             </div>
           </div>
         </CardContent>
-        
+{/*      View Details Button Deactivated - No content needed to display.
         <CardFooter className="bg-gray-50">
           <motion.button
             className="w-full py-2 text-center text-primary-600 font-medium hover:text-primary-800 transition-colors"
@@ -215,7 +215,7 @@ const SessionCard: React.FC<SessionCardProps> = memo(({ session }) => {
           >
             View Details
           </motion.button>
-        </CardFooter>
+        </CardFooter> */}
       </Card>
 
       {/* Conflict Warning Modal */}
