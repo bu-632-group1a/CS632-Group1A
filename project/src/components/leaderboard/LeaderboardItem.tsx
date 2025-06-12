@@ -22,6 +22,7 @@ interface LeaderboardItemProps {
 }
 
 const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser }) => {
+  console.log('Leaderboard entry:', entry); // <-- Add this line
   const getRankColor = (rank: number): string => {
     switch (rank) {
       case 1:
@@ -36,8 +37,11 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
   };
 
   // Display name logic: prefer name, fallback to formatted userId
-const displayName = entry.fullName || `User ${entry.userId}`;
-
+const displayName =
+  entry.fullName && entry.fullName.trim().length > 0
+    ? entry.fullName
+    : `User ${entry.userId}`;
+    
   return (
     <motion.div
       className={`
