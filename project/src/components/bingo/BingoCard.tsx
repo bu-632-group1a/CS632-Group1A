@@ -7,9 +7,10 @@ import { GET_BINGO_GAME } from '../../graphql/queries';
 
 interface BingoCardProps {
   items: BingoItem[];
+  onBingoAchieved?: () => void;
 }
 
-const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
+const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved }) => {
   const [hasWon, setHasWon] = useState(false);
 
   const [toggleBingoItem, { loading }] = useMutation(TOGGLE_BINGO_ITEM, {
@@ -37,21 +38,19 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
   const hasBingo = (): boolean => {
     if (items.length !== 16) return false;
 
-    // Rows
+    // Check rows
     for (let i = 0; i < 4; i++) {
-      const start = i * 4;
       if (
-        items[start].completed &&
-        items[start + 1].completed &&
-        items[start + 2].completed &&
-        items[start + 3].completed
+        items[i * 4].completed &&
+        items[i * 4 + 1].completed &&
+        items[i * 4 + 2].completed &&
+        items[i * 4 + 3].completed
       ) {
-        console.log(`Bingo on row ${i}`);
         return true;
       }
     }
 
-    // Columns
+    // Check columns
     for (let i = 0; i < 4; i++) {
       if (
         items[i].completed &&
@@ -59,19 +58,17 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
         items[i + 8].completed &&
         items[i + 12].completed
       ) {
-        console.log(`Bingo on column ${i}`);
         return true;
       }
     }
 
-    // Diagonals
+    // Check diagonals
     if (
       items[0].completed &&
       items[5].completed &&
       items[10].completed &&
       items[15].completed
     ) {
-      console.log('Bingo on main diagonal');
       return true;
     }
 
@@ -81,7 +78,6 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
       items[9].completed &&
       items[12].completed
     ) {
-      console.log('Bingo on anti-diagonal');
       return true;
     }
 
@@ -91,16 +87,16 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
   useEffect(() => {
     if (!hasWon && hasBingo()) {
       setHasWon(true);
+      onBingoAchieved?.();
     }
   }, [items, hasWon]);
 
   const handleToggleItem = async (itemId: string) => {
     if (loading || itemId.startsWith('placeholder')) return;
-
     try {
       await toggleBingoItem({ variables: { itemId } });
-    } catch (error) {
-      // Handled in onError
+    } catch (_) {
+      // Error already handled in onError
     }
   };
 
