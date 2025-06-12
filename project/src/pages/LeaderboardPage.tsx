@@ -30,11 +30,7 @@ const LeaderboardPage: React.FC = () => {
   const restOfLeaderboard = leaderboard.slice(3);
 
   // Enhanced leaderboard entries with display names
-  const enhancedLeaderboard = leaderboard.map((entry: any) => ({
-    ...entry,
-    // Try to get the full name from the current user data if it matches
-    name: entry.userId === userId ? (currentUser?.fullName || user?.fullName) : entry.name
-  }));
+const enhancedLeaderboard = leaderboard;
 
   const enhancedTopThree = enhancedLeaderboard.slice(0, 3);
   const enhancedRestOfLeaderboard = enhancedLeaderboard.slice(3);
@@ -84,7 +80,7 @@ const LeaderboardPage: React.FC = () => {
             const medalColor = rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-400' : 'text-amber-600';
             
             // Display name logic: prefer name, fallback to formatted userId
-            const displayName = entry.name || `${entry.userId}`;
+            const displayName = entry.fullName || `${entry.userId}`;
             console.log(`Entry: ${JSON.stringify(entry)}`);
             return (
               <motion.div 
