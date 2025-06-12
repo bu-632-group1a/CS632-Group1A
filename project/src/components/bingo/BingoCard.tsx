@@ -50,10 +50,6 @@ const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameCom
   };
 
   useEffect(() => {
-    const allCompleted = items.every((item) => item.completed);
-    if (allCompleted) {
-      onGameComplete?.();
-    }
     if (!hasWon && hasBingo()) {
       setHasWon(true);
       onBingoAchieved?.();
