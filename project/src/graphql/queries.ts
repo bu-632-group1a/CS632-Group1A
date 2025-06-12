@@ -131,6 +131,28 @@ export const GET_BINGO_GAME = gql`
   }
 `;
 
+export const USERS = gql`
+  query Users {
+    users {
+      id
+      firstName
+      lastName
+      fullName
+      username
+      email
+      profilePicture
+      city
+      state
+      company
+      location
+      role
+      isEmailVerified
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 export const GET_BINGO_LEADERBOARD = gql`
   query GetBingoLeaderboard($limit: Int) {
     bingoLeaderboard(limit: $limit) {

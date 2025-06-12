@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BarChart3, Users, Calendar, CheckSquare, Bookmark, 
+import { motion } from 'framer-motion';
+import {
+  BarChart3, Users, Calendar, CheckSquare, Bookmark,
   TrendingUp, Filter, Search, Home, Shield, AlertCircle,
   Download, RefreshCw, Eye, UserCheck, Target
 } from 'lucide-react';
@@ -13,12 +13,20 @@ import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
 import { useAuth } from '../context/AuthContext';
 import { AdminService, UserAnalytics, DashboardStats } from '../services/adminService';
-import { ME } from '../graphql/queries';
+import { ME, USERS } from '../graphql/queries'; // <-- Import USERS query
 import { mockSessions } from '../data/mockData';
+
 const AdminDashboardPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { data: userData } = useQuery(ME, { skip: !isAuthenticated });
   const currentUser = userData?.me;
+
+  // Check if user is admin
+  const isAdmin = currentUser?.role === 'ADMIN' || user?.role === 'ADMIN';
+
+  // Fetch all users for profile info
+  const { data: usersData } = useQuery(USERS, { skip: !isAdmin });
+  const allUsers = usersData?.users || [];
 
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [userAnalytics, setUserAnalytics] = useState<UserAnalytics[]>([]);
@@ -30,9 +38,6 @@ const AdminDashboardPage: React.FC = () => {
   const [userFilter, setUserFilter] = useState('');
   const [sortBy, setSortBy] = useState<'bookmarks' | 'checkins' | 'engagement' | 'total'>('total');
   const [showTopUsersOnly, setShowTopUsersOnly] = useState(false);
-
-  // Check if user is admin
-  const isAdmin = currentUser?.role === 'ADMIN' || user?.role === 'ADMIN';
 
   const sessionNameLookup = useMemo(() => {
     const lookup: Record<string, string> = {};
@@ -74,14 +79,26 @@ const AdminDashboardPage: React.FC = () => {
     }
   }, [isAdmin]);
 
+  // Merge analytics with user profile info
+  const mergedUserAnalytics = useMemo(() => {
+    return userAnalytics.map((analyticsUser) => {
+      const userProfile = allUsers.find(u => u.id === analyticsUser.userId);
+      return {
+        ...analyticsUser,
+        fullName: userProfile?.fullName || analyticsUser.userId,
+        profilePicture: userProfile?.profilePicture,
+      };
+    });
+  }, [userAnalytics, allUsers]);
+
   // Filter and sort user analytics
   const filteredAndSortedUsers = useMemo(() => {
-    let filtered = userAnalytics;
+    let filtered = mergedUserAnalytics;
 
     // Apply user filter
     if (userFilter.trim()) {
       const filterLower = userFilter.toLowerCase();
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.userId.toLowerCase().includes(filterLower) ||
         user.fullName?.toLowerCase().includes(filterLower)
       );
@@ -89,7 +106,7 @@ const AdminDashboardPage: React.FC = () => {
 
     // Apply top users filter
     if (showTopUsersOnly) {
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.bookmarksCount > 0 || user.checkInsCount > 0
       );
     }
@@ -110,7 +127,7 @@ const AdminDashboardPage: React.FC = () => {
     });
 
     return filtered;
-  }, [userAnalytics, userFilter, sortBy, showTopUsersOnly]);
+  }, [mergedUserAnalytics, userFilter, sortBy, showTopUsersOnly]);
 
   const exportData = () => {
     const csvContent = [
@@ -194,18 +211,15 @@ const AdminDashboardPage: React.FC = () => {
     visible: { opacity: 1, y: 0 }
   };
 
-  console.log('mockSessions', mockSessions);
-  console.log('topSessions', dashboardStats?.topSessions);
-
   return (
-    <motion.div 
+    <motion.div
       className="space-y-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Header */}
-      <motion.div 
+      <motion.div
         className="space-y-2"
         variants={itemVariants}
       >
@@ -271,7 +285,7 @@ const AdminDashboardPage: React.FC = () => {
                       Active Users
                     </div>
                   </div>
-                  
+
                   <div className="bg-green-50 rounded-lg p-6 text-center">
                     <div className="text-3xl font-bold text-green-600 mb-2">
                       {dashboardStats?.totalBookmarks || 0}
@@ -281,7 +295,7 @@ const AdminDashboardPage: React.FC = () => {
                       Total Bookmarks
                     </div>
                   </div>
-                  
+
                   <div className="bg-purple-50 rounded-lg p-6 text-center">
                     <div className="text-3xl font-bold text-purple-600 mb-2">
                       {dashboardStats?.totalCheckIns || 0}
@@ -291,7 +305,7 @@ const AdminDashboardPage: React.FC = () => {
                       Total Check-ins
                     </div>
                   </div>
-                  
+
                   <div className="bg-orange-50 rounded-lg p-6 text-center">
                     <div className="text-3xl font-bold text-orange-600 mb-2">
                       {dashboardStats?.overallEngagementRate.toFixed(1) || 0}%
@@ -317,7 +331,7 @@ const AdminDashboardPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-medium text-gray-900 mb-2">Platform Totals</h3>
                     <div className="space-y-2 text-sm">
@@ -442,8 +456,8 @@ const AdminDashboardPage: React.FC = () => {
                         onClick={() => setShowTopUsersOnly(!showTopUsersOnly)}
                         className={`
                           px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                          ${showTopUsersOnly 
-                            ? 'bg-primary-100 text-primary-800' 
+                          ${showTopUsersOnly
+                            ? 'bg-primary-100 text-primary-800'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
                         `}
                       >
@@ -471,11 +485,13 @@ const AdminDashboardPage: React.FC = () => {
                         transition={{ duration: 0.2 }}
                       >
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          {/* User ID and icon */}
+                          {/* User profile picture and name */}
                           <div className="flex items-center">
-                            <div className="bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center mr-3">
-                              <UserCheck size={20} className="text-gray-600" />
-                            </div>
+                            <img
+                              src={user.profilePicture || 'https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg'}
+                              alt={user.fullName || user.userId}
+                              className="w-10 h-10 rounded-full object-cover mr-3 border border-gray-200"
+                            />
                             <div>
                               <p className="text-base font-medium text-gray-900">
                                 {user.fullName && user.fullName.trim().length > 0 ? user.fullName : user.userId}
@@ -483,7 +499,7 @@ const AdminDashboardPage: React.FC = () => {
                               <p className="text-xs text-gray-500 break-all">ID: {user.userId}</p>
                             </div>
                           </div>
-                          {/* Analytics: always below user ID on mobile, right on desktop */}
+                          {/* Analytics */}
                           <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 w-full sm:w-auto mt-2 sm:mt-0">
                             <div className="text-center">
                               <div className="text-lg font-bold text-green-600">{user.bookmarksCount}</div>
@@ -498,7 +514,7 @@ const AdminDashboardPage: React.FC = () => {
                               <div className="text-xs text-gray-500">Engagement</div>
                             </div>
                             <div className="text-center">
-                              <Badge 
+                              <Badge
                                 variant={user.engagementRate >= 80 ? 'success' : user.engagementRate >= 50 ? 'warning' : 'default'}
                                 size="sm"
                               >
@@ -525,4 +541,5 @@ const AdminDashboardPage: React.FC = () => {
     </motion.div>
   );
 };
+
 export default AdminDashboardPage;
