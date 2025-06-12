@@ -424,7 +424,20 @@ const BingoPage: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" />
               </div>
             ) : (
-              <BingoCard items={transformedItems} />
+              <BingoCard
+                items={transformedItems}
+                onGameComplete={() => {
+                  // Example: refetch game data or set a local state
+                  refetchGame();
+                  // Optionally, set a local state if you want to track completion in BingoPage
+                  // setGameComplete(true);
+                  console.log('Game complete!');
+                }}
+                onBingoAchieved={() => {
+                  // Optional: show a toast, animation, etc.
+                  console.log('Bingo achieved!');
+                }}
+              />
             )}
           </CardContent>
         </Card>
