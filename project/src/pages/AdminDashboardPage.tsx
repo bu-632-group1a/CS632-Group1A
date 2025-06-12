@@ -477,7 +477,8 @@ const AdminDashboardPage: React.FC = () => {
                               <UserCheck size={20} className="text-gray-600" />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-600 break-all">ID: {user.userId}</p>
+                              <p className="text-base font-medium text-gray-900">{user.fullName || 'Unknown User'}</p>
+                              <p className="text-xs text-gray-500 break-all">ID: {user.userId}</p>
                             </div>
                           </div>
                           {/* Analytics: always below user ID on mobile, right on desktop */}
