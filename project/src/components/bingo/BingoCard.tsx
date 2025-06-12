@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation } from '@apollo/client';
 import { BingoItem } from '../../types';
@@ -10,13 +10,15 @@ interface BingoCardProps {
 }
 
 const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
+  const [hasWon, setHasWon] = useState(false);
+
   const [toggleBingoItem, { loading }] = useMutation(TOGGLE_BINGO_ITEM, {
     refetchQueries: [{ query: GET_BINGO_GAME }],
     onError: (error) => {
       console.error('Error toggling bingo item:', error);
     }
   });
-  
+
   const gridVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -32,23 +34,24 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
     visible: { opacity: 1, scale: 1 },
   };
 
-  // Calculate if we have a bingo (horizontal, vertical, or diagonal)
-  const hasBingo = () => {
+  const hasBingo = (): boolean => {
     if (items.length !== 16) return false;
-    
-    // Check rows
+
+    // Rows
     for (let i = 0; i < 4; i++) {
+      const start = i * 4;
       if (
-        items[i * 4].completed &&
-        items[i * 4 + 1].completed &&
-        items[i * 4 + 2].completed &&
-        items[i * 4 + 3].completed
+        items[start].completed &&
+        items[start + 1].completed &&
+        items[start + 2].completed &&
+        items[start + 3].completed
       ) {
+        console.log(`Bingo on row ${i}`);
         return true;
       }
     }
-    
-    // Check columns
+
+    // Columns
     for (let i = 0; i < 4; i++) {
       if (
         items[i].completed &&
@@ -56,49 +59,54 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
         items[i + 8].completed &&
         items[i + 12].completed
       ) {
+        console.log(`Bingo on column ${i}`);
         return true;
       }
     }
-    
-    // Check diagonals
+
+    // Diagonals
     if (
       items[0].completed &&
       items[5].completed &&
       items[10].completed &&
       items[15].completed
     ) {
+      console.log('Bingo on main diagonal');
       return true;
     }
-    
+
     if (
       items[3].completed &&
       items[6].completed &&
       items[9].completed &&
       items[12].completed
     ) {
+      console.log('Bingo on anti-diagonal');
       return true;
     }
-    
+
     return false;
   };
 
+  useEffect(() => {
+    if (!hasWon && hasBingo()) {
+      setHasWon(true);
+    }
+  }, [items, hasWon]);
+
   const handleToggleItem = async (itemId: string) => {
     if (loading || itemId.startsWith('placeholder')) return;
-    
+
     try {
-      await toggleBingoItem({
-        variables: { itemId }
-      });
+      await toggleBingoItem({ variables: { itemId } });
     } catch (error) {
-      // Error is handled by onError callback
+      // Handled in onError
     }
   };
 
-  const bingoAchieved = hasBingo();
-
   return (
     <div className="relative">
-      {bingoAchieved && (
+      {hasWon && (
         <motion.div 
           className="absolute -top-6 left-0 right-0 text-center"
           initial={{ opacity: 0, y: -20 }}
@@ -110,7 +118,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
           </span>
         </motion.div>
       )}
-      
+
       <motion.div 
         className="
           grid 
@@ -128,7 +136,7 @@ const BingoCard: React.FC<BingoCardProps> = ({ items }) => {
         initial="hidden"
         animate="visible"
       >
-        {items.map((item, index) => (
+        {items.map((item) => (
           <motion.button
             key={item.id}
             className={`
