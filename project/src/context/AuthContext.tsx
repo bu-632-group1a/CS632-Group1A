@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
-import { useMutation, ApolloError } from '@apollo/client';
+import { useMutation, ApolloError, useQuery } from '@apollo/client';
 import { LOGIN, REGISTER, LOGOUT } from '../graphql/mutations';
+import { ME } from '../graphql/queries';
 
 interface User {
   id: string;
@@ -335,6 +336,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     checkTokenOnLoad();
   }, []); // Only run once on mount
+
+  // Fetch latest user profile when authenticated
+  const { data: meData, refetch: refetchMe } = useQuery(ME, {
+    skip: !authState.accessToken,
+    fetchPolicy: 'network-only',
+  });
+
+  useEffect(() => {
+    if (meData?.me) {
+      // Only update if the profile picture or other info has changed
+      if (JSON.stringify(meData.me) !== JSON.stringify(authState.user)) {
+        const newAuthState = { ...authState, user: meData.me };
+        saveAuthState(newAuthState);
+      }
+    }
+    // eslint-disable-next-line
+  }, [meData]);
 
   const login = async (email: string, password: string) => {
     try {
