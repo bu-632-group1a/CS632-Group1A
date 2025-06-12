@@ -131,7 +131,7 @@ const ProfilePage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-gray-900">Update Profile Picture</h3>
+                <h3 className="font-medium text-gray-900">Update Profile (Enter Image URL)</h3>
                 <button 
                   className="text-gray-500 hover:text-gray-700"
                   onClick={() => {
