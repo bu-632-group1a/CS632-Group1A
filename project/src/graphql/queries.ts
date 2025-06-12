@@ -46,6 +46,8 @@ export const GET_LEADERBOARD = gql`
   query GetLeaderboard($limit: Int) {
     leaderboard(limit: $limit) {
       userId
+      fullName
+      profilePicture
       totalActions
       totalImpact
       averageImpact

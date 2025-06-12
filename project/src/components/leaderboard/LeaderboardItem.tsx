@@ -12,7 +12,7 @@ interface LeaderboardEntry {
     count: number;
   }>;
   rank: number;
-  name?: string;
+  fullName?: string; // <-- Change from name to fullName
   profilePicture?: string;
 }
 
@@ -36,7 +36,7 @@ const LeaderboardItem: React.FC<LeaderboardItemProps> = ({ entry, isCurrentUser 
   };
 
   // Display name logic: prefer name, fallback to formatted userId
-  const displayName = entry.name || `User ${entry.userId}`;
+const displayName = entry.fullName || `User ${entry.userId}`;
 
   return (
     <motion.div
