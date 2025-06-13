@@ -54,7 +54,6 @@ const bingoResolvers = {
     },
 
     bingoGame: async (_, __, context) => {
-      // Require email verification to access bingo game
       const authUser = getVerifiedAuthUser(context);
 
       try {
@@ -62,10 +61,7 @@ const bingoResolvers = {
           .populate('completedItems.itemId');
 
         if (!game) {
-          // Ensure we have bingo items before creating a game
-          await bingoResolvers.Query.bingoItems();
-
-          // Get all active items and build a new board
+          // Always use current active items
           const allItems = await BingoItem.find({ isActive: true });
           if (allItems.length < 16) {
             throw new GraphQLError('Not enough bingo items to create a board (need at least 16)', {
@@ -78,7 +74,6 @@ const bingoResolvers = {
             position: idx,
           }));
 
-          // CREATE THE NEW BINGOGAME DOCUMENT HERE:
           game = new BingoGame({
             userId: authUser.userId,
             completedItems: [],
@@ -92,10 +87,6 @@ const bingoResolvers = {
 
         return game;
       } catch (error) {
-        if (error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
-          throw error;
-        }
-
         throw new GraphQLError(`Failed to fetch bingo game: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
         });

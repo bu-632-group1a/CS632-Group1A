@@ -15,6 +15,8 @@ import userResolvers from './resolvers/userResolvers.js';
 import bingoResolvers from './resolvers/bingoResolvers.js';
 import { connectDB } from './config/db.js';
 import { verifyAccessToken } from './utils/auth.js';
+import BingoItem from './models/BingoItem.js';
+import { getProjectManagementSustainabilityBingoItems } from './utils/defaultBingoItems.js';
 
 dotenv.config();
 
@@ -166,6 +168,25 @@ async function startServer() {
   
   // Use GraphQL over WebSocket protocol
   const serverCleanup = useServer({ schema }, wsServer);
+
+  // Ensure default bingo items exist
+  async function ensureDefaultBingoItems() {
+    const count = await BingoItem.countDocuments();
+    if (count < 16) {
+      const defaultItems = getProjectManagementSustainabilityBingoItems();
+      await BingoItem.insertMany(
+        defaultItems.map(item => ({
+          ...item,
+          createdBy: 'system',
+          isActive: true,
+        }))
+      );
+      console.log('Inserted default bingo items');
+    }
+  }
+
+  // Ensure default bingo items on server start
+  await ensureDefaultBingoItems();
 
   // Start the server
   const PORT = process.env.PORT || 4000;
