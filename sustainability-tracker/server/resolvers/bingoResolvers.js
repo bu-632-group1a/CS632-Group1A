@@ -637,6 +637,7 @@ const board = shuffled.map((item, idx) => ({
 
   BingoCompletedItem: {
     item: (parent) => parent.itemId,
+    position: (parent) => parent.position, // <-- Add this line
     completedAt: (parent) => parent.completedAt.toISOString(),
   },
 
