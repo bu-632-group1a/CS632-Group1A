@@ -56,22 +56,29 @@ const bingoResolvers = {
     bingoGame: async (_, __, context) => {
       // Require email verification to access bingo game
       const authUser = getVerifiedAuthUser(context);
-      
+
       try {
         let game = await BingoGame.findOne({ userId: authUser.userId })
           .populate('completedItems.itemId');
-        
+
         if (!game) {
           // Ensure we have bingo items before creating a game
           await bingoResolvers.Query.bingoItems();
-          
-const allItems = await BingoItem.find({ isActive: true });
-const shuffled = allItems.sort(() => Math.random() - 0.5).slice(0, 16);
-const board = shuffled.map((item, idx) => ({
-  itemId: item._id,
-  position: idx,
-}));
 
+          // Get all active items and build a new board
+          const allItems = await BingoItem.find({ isActive: true });
+          if (allItems.length < 16) {
+            throw new GraphQLError('Not enough bingo items to create a board (need at least 16)', {
+              extensions: { code: 'BAD_REQUEST' },
+            });
+          }
+          const shuffled = allItems.sort(() => Math.random() - 0.5).slice(0, 16);
+          const board = shuffled.map((item, idx) => ({
+            itemId: item._id,
+            position: idx,
+          }));
+
+          // CREATE THE NEW BINGOGAME DOCUMENT HERE:
           game = new BingoGame({
             userId: authUser.userId,
             completedItems: [],
@@ -82,13 +89,13 @@ const board = shuffled.map((item, idx) => ({
           await game.save();
           await game.populate('completedItems.itemId');
         }
-        
+
         return game;
       } catch (error) {
         if (error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
           throw error;
         }
-        
+
         throw new GraphQLError(`Failed to fetch bingo game: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
         });
