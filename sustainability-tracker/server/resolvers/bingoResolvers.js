@@ -86,6 +86,14 @@ const bingoResolvers = {
           await game.populate('completedItems.itemId');
         }
 
+        if (game && Array.isArray(game.board)) {
+          game.board = game.board.map(entry => {
+            // Remove 'item' property if it exists
+            const { item, ...rest } = entry.toObject ? entry.toObject() : entry;
+            return rest;
+          });
+        }
+
         return game;
       } catch (error) {
         throw new GraphQLError(`Failed to fetch bingo game: ${error.message}`, {
