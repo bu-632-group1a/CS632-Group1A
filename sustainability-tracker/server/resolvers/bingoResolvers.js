@@ -635,9 +635,18 @@ const board = shuffled.map((item, idx) => ({
     bingosAchieved: (parent) => parent.bingosAchieved || [],
   },
 
+  BingoBoardEntry: {
+    // 1. Add a resolver for the item field to fetch the full BingoItem
+    item: async (parent) => {
+      // parent.itemId may be an ObjectId or string
+      return await BingoItem.findById(parent.itemId);
+    },
+    position: (parent) => parent.position,
+  },
+
   BingoCompletedItem: {
     item: (parent) => parent.itemId,
-    position: (parent) => parent.position, // <-- Add this line
+    position: (parent) => parent.position,
     completedAt: (parent) => parent.completedAt.toISOString(),
   },
 
