@@ -6,6 +6,7 @@ import User from '../models/User.js';
 import { getVerifiedAuthUser, getUnverifiedAuthUser } from '../utils/auth.js';
 import { validateCreateBingoItem, validateUpdateBingoItem } from '../validators/bingoValidators.js';
 import { getProjectManagementSustainabilityBingoItems, getAlternativeProjectBingoItems } from '../utils/defaultBingoItems.js';
+import mongoose from 'mongoose'; // Add this at the top if not already imported
 
 // Subscription event names
 const BINGO_EVENTS = {
@@ -674,22 +675,22 @@ const bingoResolvers = {
 
 BingoBoardEntry: {
   item: async (parent) => {
-    console.log('BingoBoardEntry parent:', parent);
-    const id = parent.itemId || parent.item;
-    if (!id) {
-      console.error('No itemId or item in BingoBoardEntry:', parent);
-      throw new GraphQLError(
-        `BingoBoardEntry.item: No itemId or item found in board entry: ${JSON.stringify(parent)}`,
-        { extensions: { code: 'NOT_FOUND' } }
-      );
+    let id = parent.itemId || parent.item;
+    if (!id) return null;
+    // Convert to ObjectId if necessary
+    if (typeof id === 'string') {
+      try {
+        id = new mongoose.Types.ObjectId(id);
+      } catch (e) {
+        return null;
+      }
     }
     const item = await BingoItem.findById(id);
-    console.log('Looking up BingoItem by id:', id, 'Result:', item);
     if (!item) {
-      throw new GraphQLError(
-        `BingoBoardEntry.item not found for itemId: ${id}`,
-        { extensions: { code: 'NOT_FOUND' } }
-      );
+      // Try raw MongoDB as a last resort
+      const raw = await BingoItem.collection.findOne({ _id: id });
+      console.log('Raw MongoDB lookup:', raw);
+      return null;
     }
     return item;
   },
