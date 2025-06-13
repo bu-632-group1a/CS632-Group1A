@@ -44,6 +44,6 @@ const bingoItemSchema = new mongoose.Schema(
 // Create index for category-based queries
 bingoItemSchema.index({ category: 1, isActive: 1 });
 
-const BingoItem = mongoose.model('BingoItem', bingoItemSchema);
+const BingoItem = mongoose.models.BingoItem || mongoose.model('BingoItem', bingoItemSchema);
 
 export default BingoItem;
