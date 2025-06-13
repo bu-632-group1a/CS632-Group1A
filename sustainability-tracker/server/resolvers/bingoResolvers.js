@@ -31,8 +31,7 @@ const bingoResolvers = {
   Query: {
     bingoItems: async () => {
       try {
-        let items = await BingoItem.find({ isActive: true }).sort({ position: 1 });
-        
+        let items = await BingoItem.find({ isActive: true });        
         // If no items exist, create the default project management + sustainability items
         if (items.length === 0) {
           const defaultItems = getProjectManagementSustainabilityBingoItems();
@@ -224,8 +223,7 @@ const board = shuffled.map((item, idx) => ({
             { category: { $in: EASY_COMPLETION_CATEGORIES } },
             { text: { $regex: EASY_COMPLETION_KEYWORDS.join('|'), $options: 'i' } }
           ]
-        }).sort({ points: 1, position: 1 }).limit(3);
-
+        }).sort({ points: 1 }).limit(3);
         return easyItems;
       } catch (error) {
         if (error.extensions?.code === 'EMAIL_NOT_VERIFIED') {
@@ -266,12 +264,7 @@ const board = shuffled.map((item, idx) => ({
         await newItem.save();
         return newItem;
       } catch (error) {
-        if (error.code === 11000) {
-          throw new GraphQLError('A bingo item already exists at this position', {
-            extensions: { code: 'BAD_USER_INPUT' },
-          });
-        }
-        
+   
         throw new GraphQLError(`Failed to create bingo item: ${error.message}`, {
           extensions: { code: 'DATABASE_ERROR' },
         });
