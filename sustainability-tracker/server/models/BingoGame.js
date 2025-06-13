@@ -14,6 +14,10 @@ const bingoGameSchema = new mongoose.Schema(
         ref: 'BingoItem',
         required: true,
       },
+        position: {
+        type: Number,
+        required: true, // <-- This enforces position is always present!
+      },
       completedAt: {
         type: Date,
         default: Date.now,

@@ -372,11 +372,18 @@ export const bingoResolvers = {
         // Find the position for this item on the user's board
         const boardEntry = game.board.find(b => b.itemId.toString() === itemId);
         if (!boardEntry) {
+            console.error('Tried to toggle item not on board:', itemId, game.board);
+
           throw new GraphQLError('Item not found on user board', {
             extensions: { code: 'BAD_USER_INPUT' },
           });
         }
         game.completedItems.push({
+          itemId: bingoItem._id,
+          position: boardEntry.position,
+          completedAt: new Date(),
+        });
+        console.log('Added completed item:', {
           itemId: bingoItem._id,
           position: boardEntry.position,
           completedAt: new Date(),
@@ -691,11 +698,24 @@ export const bingoResolvers = {
     id: (parent) => parent._id || parent.id,
   },
 
-  BingoGame: {
-    id: (parent) => parent._id || parent.id,
-    completedItems: (parent) => parent.completedItems || [],
-    bingosAchieved: (parent) => parent.bingosAchieved || [],
+BingoGame: {
+  id: (parent) => parent._id || parent.id,
+  completedItems: (parent) => {
+    if (!parent.completedItems || !parent.board) return parent.completedItems || [];
+    return parent.completedItems.map(item => {
+      if (typeof item.position === 'number') return item;
+      // Try to find the position from the board
+      const boardEntry = parent.board.find(b =>
+        b.itemId.toString() === (item.itemId._id ? item.itemId._id.toString() : item.itemId.toString())
+      );
+      return {
+        ...item,
+        position: boardEntry ? boardEntry.position : undefined,
+      };
+    });
   },
+  bingosAchieved: (parent) => parent.bingosAchieved || [],
+},
 
 BingoBoardEntry: {
   item: async (parent) => {
