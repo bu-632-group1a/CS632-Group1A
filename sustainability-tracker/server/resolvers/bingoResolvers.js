@@ -63,7 +63,7 @@ export const bingoResolvers = {
           .populate('completedItems.itemId');
 
         if (!game) {
-          // Always use current active items
+          // Always use current active items for the board
           const allItems = await BingoItem.find({ isActive: true });
           if (allItems.length < 16) {
             throw new GraphQLError('Not enough bingo items to create a board (need at least 16)', {
@@ -81,7 +81,7 @@ export const bingoResolvers = {
             completedItems: [],
             bingosAchieved: [],
             totalPoints: 0,
-            board,
+            board, // <-- Add this!
           });
           await game.save();
           await game.populate('completedItems.itemId');
@@ -338,11 +338,25 @@ export const bingoResolvers = {
         // Find or create the user's bingo game
         let game = await BingoGame.findOne({ userId: authUser.userId });
         if (!game) {
+          // Always use current active items for the board
+          const allItems = await BingoItem.find({ isActive: true });
+          if (allItems.length < 16) {
+            throw new GraphQLError('Not enough bingo items to create a board (need at least 16)', {
+              extensions: { code: 'BAD_REQUEST' },
+            });
+          }
+          const shuffled = allItems.sort(() => Math.random() - 0.5).slice(0, 16);
+          const board = shuffled.map((item, idx) => ({
+            itemId: item._id,
+            position: idx,
+          }));
+
           game = new BingoGame({
             userId: authUser.userId,
             completedItems: [],
             bingosAchieved: [],
             totalPoints: 0,
+            board, // <-- Add this!
           });
         }
 
@@ -693,18 +707,28 @@ BingoBoardEntry: {
   },
   position: (parent) => parent.position,
 },
-  BingoCompletedItem: {
-    item: (parent) => { /* ... */ },
-    position: (parent) => {
-      if (typeof parent.position !== 'number') {
-        console.error('Missing position in BingoCompletedItem:', parent);
-        return 0; // or throw an error
-      }
-      return parent.position;
-    },
-    completedAt: (parent) => parent.completedAt,
+BingoCompletedItem: {
+item: async (parent) => {
+  if (!parent.itemId) {
+    throw new GraphQLError('Missing itemId in BingoCompletedItem');
+  }
+  if (typeof parent.itemId === 'object' && parent.itemId._id) {
+    return parent.itemId;
+  }
+  const item = await BingoItem.findById(parent.itemId);
+  if (!item) {
+    throw new GraphQLError(`BingoItem not found for completed itemId: ${parent.itemId}`);
+  }
+  return item;
+},
+  position: (parent) => {
+    if (typeof parent.position !== 'number') {
+      throw new GraphQLError('Missing position in BingoCompletedItem');
+    }
+    return parent.position;
   },
-
+  completedAt: (parent) => parent.completedAt,
+},
   BingoAchievement: {
     achievedAt: (parent) => parent.achievedAt.toISOString(),
   },
