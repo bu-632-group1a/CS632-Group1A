@@ -675,6 +675,7 @@ const bingoResolvers = {
 
 BingoBoardEntry: {
   item: async (parent) => {
+    console.log('BingoBoardEntry.item parent:', parent);
     let id = parent.itemId || parent.item;
     if (!id) return null;
     // Convert to ObjectId if necessary
