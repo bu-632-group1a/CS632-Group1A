@@ -694,9 +694,15 @@ BingoBoardEntry: {
   position: (parent) => parent.position,
 },
   BingoCompletedItem: {
-    item: (parent) => parent.itemId,
-    position: (parent) => parent.position,
-    completedAt: (parent) => parent.completedAt.toISOString(),
+    item: (parent) => { /* ... */ },
+    position: (parent) => {
+      if (typeof parent.position !== 'number') {
+        console.error('Missing position in BingoCompletedItem:', parent);
+        return 0; // or throw an error
+      }
+      return parent.position;
+    },
+    completedAt: (parent) => parent.completedAt,
   },
 
   BingoAchievement: {

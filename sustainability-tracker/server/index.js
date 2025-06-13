@@ -50,6 +50,7 @@ const mergedResolvers = {
   BingoCompletedItem: bingoResolvers.BingoCompletedItem,
   BingoAchievement: bingoResolvers.BingoAchievement,
   BingoBoardEntry: bingoResolvers.BingoBoardEntry,
+  
 };
 
 async function startServer() {
