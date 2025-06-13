@@ -58,10 +58,13 @@ const BingoPage: React.FC = () => {
   // Build the board from bingoGame.board
   const board = React.useMemo(() => {
     if (!bingoGame?.board) return [];
-    return bingoGame.board.map(entry => ({
-      ...entry,
-      completed: bingoGame.completedItems?.some(ci => ci.item.id === entry.item.id) || false
-    }));
+    // Filter out entries with null item
+    return bingoGame.board
+      .filter(entry => entry.item) // Only include entries with a valid item
+      .map(entry => ({
+        ...entry,
+        completed: bingoGame.completedItems?.some(ci => ci.item && ci.item.id === entry.item.id) || false
+      }));
   }, [bingoGame]);
 
   // Calculate completion percentage
