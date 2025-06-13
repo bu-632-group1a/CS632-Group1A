@@ -58,7 +58,7 @@ const bingoResolvers = {
       const authUser = getVerifiedAuthUser(context);
 
       try {
-        let game = await BingoGame.findOne({ userId: authUser.userId })
+        let game = await BingoGame.findOne({ userId: authUser.userId.toString() })
           .populate('completedItems.itemId');
 
         if (!game) {
@@ -76,7 +76,7 @@ const bingoResolvers = {
           }));
 
           game = new BingoGame({
-            userId: authUser.userId,
+            userId: authUser.userId.toString(),
             completedItems: [],
             bingosAchieved: [],
             totalPoints: 0,
