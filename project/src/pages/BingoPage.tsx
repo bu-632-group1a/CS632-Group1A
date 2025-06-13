@@ -398,8 +398,7 @@ const BingoPage: React.FC = () => {
         </Card>
       </motion.div>
 
-        console.log(isAdmin: {String(isAdmin)};
-      
+        <div>Role Admin?: {String(isAdmin)}</div>
     </motion.div>
   );
 };
