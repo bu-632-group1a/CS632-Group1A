@@ -24,15 +24,11 @@ const BingoPage: React.FC = () => {
   const [showAdminPanel, setShowAdminPanel] = React.useState(false);
   const [selectedGameType, setSelectedGameType] = useState('default');
   const [showGameSelector, setShowGameSelector] = useState(false);
-  
+
   const { data: userData } = useQuery(ME, {
     skip: !isAuthenticated
   });
-  
-  const { data: bingoItemsData, loading: itemsLoading, error: itemsError } = useQuery(GET_BINGO_ITEMS, {
-    errorPolicy: 'all'
-  });
-  
+
   const { data: bingoGameData, loading: gameLoading, error: gameError, refetch: refetchGame } = useQuery(GET_BINGO_GAME, {
     skip: !isAuthenticated,
     errorPolicy: 'all'
@@ -50,80 +46,24 @@ const BingoPage: React.FC = () => {
 
   const user = userData?.me;
   const isAdmin = user?.role === 'ADMIN';
-  
-  // FIX: Create a mutable copy of the bingoItems array
-  const bingoItems = React.useMemo(() => {
-    if (!bingoItemsData?.bingoItems) return [];
-    return [...bingoItemsData.bingoItems];
-  }, [bingoItemsData?.bingoItems]);
-  
+
   const bingoGame = bingoGameData?.bingoGame;
 
   // Get selected game info
   const selectedGame = GAME_TYPES.find(game => game.id === selectedGameType) || GAME_TYPES[0];
 
-  // Transform GraphQL data to match existing BingoCard component interface
-  const transformedItems = React.useMemo(() => {
-    if (!bingoItems.length) {
-      // Create placeholder items for the default game
-      const placeholderItems = [
-        'Attend a keynote speech',
-        'Visit the innovation showcase', 
-        'Network with 3 new people',
-        'Ask a question during Q&A',
-        'Attend a panel discussion',
-        'Take public transit to the event',
-        'Share on social media',
-        'Visit all vendor demos',
-        'Use a reusable water bottle',
-        'Join the sustainability tour',
-        'Exchange contact info',
-        'Participate in a workshop',
-        'Take session notes',
-        'Learn about AI in PM',
-        'Meet a keynote speaker',
-        'Visit the heat exchange area'
-      ];
-
-      return placeholderItems.map((text, index) => ({
-        id: `placeholder-${index}`,
-        text,
-        completed: false
-      }));
-    }
-    
-    // Create a 4x4 grid (16 items) sorted by position
-    // FIX: Sort the already-copied array safely
-    const sortedItems = bingoItems
-      .filter(item => item.isActive)
-      .sort((a, b) => a.position - b.position)
-      .slice(0, 16);
-    
-    // Fill remaining positions if needed
-    while (sortedItems.length < 16) {
-      sortedItems.push({
-        id: `placeholder-${sortedItems.length}`,
-        text: 'Coming Soon...',
-        position: sortedItems.length,
-        category: 'GENERAL',
-        points: 0,
-        isActive: false,
-        createdBy: '',
-        createdAt: '',
-        updatedAt: ''
-      });
-    }
-    
-    return sortedItems.map(item => ({
-      id: item.id,
-      text: item.text,
-      completed: bingoGame?.completedItems?.some(completed => completed.item.id === item.id) || false
+  // Build the board from bingoGame.board
+  const board = React.useMemo(() => {
+    if (!bingoGame?.board) return [];
+    return bingoGame.board.map(entry => ({
+      ...entry,
+      completed: bingoGame.completedItems?.some(ci => ci.item.id === entry.item.id) || false
     }));
-  }, [bingoItems, bingoGame]);
+  }, [bingoGame]);
 
   // Calculate completion percentage
-  const completedItems = transformedItems.filter(item => item.completed).length;
-  const completionPercentage = Math.round((completedItems / transformedItems.length) * 100);
+  const completedItems = board.filter(item => item.completed).length;
+  const completionPercentage = board.length ? Math.round((completedItems / board.length) * 100) : 0;
 
   // Calculate bingo achievements
   const bingosAchieved = bingoGame?.bingosAchieved?.length || 0;
@@ -160,7 +100,7 @@ const BingoPage: React.FC = () => {
     );
   }
 
-  if (itemsError && gameError) {
+  if (gameError) {
     return (
       <div className="space-y-4">
         <div className="bg-red-50 p-4 rounded-lg">
@@ -330,7 +270,7 @@ const BingoPage: React.FC = () => {
                   ></motion.div>
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-sm text-gray-600">{completedItems} of {transformedItems.length} completed</span>
+                  <span className="text-sm text-gray-600">{completedItems} of {board.length} completed</span>
                   <span className="text-sm font-medium text-primary-600">{completionPercentage}%</span>
                 </div>
               </div>
@@ -419,25 +359,12 @@ const BingoPage: React.FC = () => {
               </ul>
             </div>
             
-            {itemsLoading || gameLoading ? (
+            {gameLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" />
               </div>
             ) : (
-              <BingoCard
-                items={transformedItems}
-                onGameComplete={() => {
-                  // Example: refetch game data or set a local state
-                  refetchGame();
-                  // Optionally, set a local state if you want to track completion in BingoPage
-                  // setGameComplete(true);
-                  console.log('Game complete!');
-                }}
-                onBingoAchieved={() => {
-                  // Optional: show a toast, animation, etc.
-                  console.log('Bingo achieved!');
-                }}
-              />
+              <BingoCard board={board} />
             )}
           </CardContent>
         </Card>

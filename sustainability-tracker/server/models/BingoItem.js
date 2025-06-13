@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-
 const bingoItemSchema = new mongoose.Schema(
   {
     text: {
@@ -7,12 +6,6 @@ const bingoItemSchema = new mongoose.Schema(
       required: [true, 'Bingo item text is required'],
       trim: true,
       maxlength: [200, 'Bingo item text cannot exceed 200 characters'],
-    },
-    position: {
-      type: Number,
-      required: [true, 'Position is required'],
-      min: [0, 'Position must be at least 0'],
-      max: [15, 'Position must be at most 15'],
     },
     category: {
       type: String,
@@ -47,9 +40,6 @@ const bingoItemSchema = new mongoose.Schema(
     collection: 'bingo_items',
   }
 );
-
-// Create compound index for position uniqueness within active items
-bingoItemSchema.index({ position: 1, isActive: 1 }, { unique: true });
 
 // Create index for category-based queries
 bingoItemSchema.index({ category: 1, isActive: 1 });

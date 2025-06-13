@@ -5,13 +5,19 @@ import { BingoItem } from '../../types';
 import { TOGGLE_BINGO_ITEM } from '../../graphql/mutations';
 import { GET_BINGO_GAME } from '../../graphql/queries';
 
+interface BingoBoardEntry {
+  item: BingoItem;
+  position: number;
+  completed: boolean;
+}
+
 interface BingoCardProps {
-  items: BingoItem[];
+  board: BingoBoardEntry[];
   onBingoAchieved?: () => void;
   onGameComplete?: () => void;
 }
 
-const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameComplete }) => {
+const BingoCard: React.FC<BingoCardProps> = ({ board, onBingoAchieved, onGameComplete }) => {
   const [hasWon, setHasWon] = useState(false);
   const [toggleBingoItem, { loading }] = useMutation(TOGGLE_BINGO_ITEM, {
     refetchQueries: [{ query: GET_BINGO_GAME }],
@@ -20,32 +26,38 @@ const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameCom
     }
   });
 
-  const gridVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1 },
-  };
+  // Sort board by position
+  const sortedBoard = [...board].sort((a, b) => a.position - b.position);
 
   const hasBingo = (): boolean => {
-    if (items.length !== 16) return false;
-
+    if (sortedBoard.length !== 16) return false;
+    // Check rows, columns, diagonals
     for (let i = 0; i < 4; i++) {
-      if (items[i * 4].completed && items[i * 4 + 1].completed && items[i * 4 + 2].completed && items[i * 4 + 3].completed) return true;
-      if (items[i].completed && items[i + 4].completed && items[i + 8].completed && items[i + 12].completed) return true;
+      if (
+        sortedBoard[i * 4].completed &&
+        sortedBoard[i * 4 + 1].completed &&
+        sortedBoard[i * 4 + 2].completed &&
+        sortedBoard[i * 4 + 3].completed
+      ) return true;
+      if (
+        sortedBoard[i].completed &&
+        sortedBoard[i + 4].completed &&
+        sortedBoard[i + 8].completed &&
+        sortedBoard[i + 12].completed
+      ) return true;
     }
-
-    if (items[0].completed && items[5].completed && items[10].completed && items[15].completed) return true;
-    if (items[3].completed && items[6].completed && items[9].completed && items[12].completed) return true;
-
+    if (
+      sortedBoard[0].completed &&
+      sortedBoard[5].completed &&
+      sortedBoard[10].completed &&
+      sortedBoard[15].completed
+    ) return true;
+    if (
+      sortedBoard[3].completed &&
+      sortedBoard[6].completed &&
+      sortedBoard[9].completed &&
+      sortedBoard[12].completed
+    ) return true;
     return false;
   };
 
@@ -53,9 +65,9 @@ const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameCom
     if (!hasWon && hasBingo()) {
       setHasWon(true);
       onBingoAchieved?.();
-      onGameComplete?.(); // Call this here if you want game complete on bingo
+      onGameComplete?.();
     }
-  }, [items, hasWon]);
+  }, [board, hasWon]);
 
   const handleToggleItem = async (itemId: string) => {
     if (loading || itemId.startsWith('placeholder')) return;
@@ -94,13 +106,12 @@ const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameCom
           rounded-xl 
           shadow-soft-lg
         "
-        variants={gridVariants}
         initial="hidden"
         animate="visible"
       >
-        {items.map((item) => (
+        {sortedBoard.map((entry) => (
           <motion.button
-            key={item.id}
+            key={entry.item.id}
             className={`
               w-[56px] h-[80px]
               sm:w-[80px] sm:h-[100px]
@@ -112,23 +123,22 @@ const BingoCard: React.FC<BingoCardProps> = ({ items, onBingoAchieved, onGameCom
               text-[6px] sm:text-xs md:text-base lg:text-lg
               break-words whitespace-normal
               overflow-hidden
-              ${item.completed 
+              ${entry.completed 
                 ? 'bg-primary-100 border-2 border-primary-500 text-primary-800 shadow-md' 
                 : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 shadow-sm'}
               transition-colors disabled:opacity-50 disabled:cursor-not-allowed
               ${loading ? 'pointer-events-none' : ''}
             `}
-            onClick={() => handleToggleItem(item.id)}
-            variants={itemVariants}
+            onClick={() => handleToggleItem(entry.item.id)}
             whileHover={{ scale: loading ? 1 : 1.05 }}
             whileTap={{ scale: loading ? 1 : 0.95 }}
-            aria-pressed={item.completed}
-            disabled={loading || item.id.startsWith('placeholder')}
+            aria-pressed={entry.completed}
+            disabled={loading || entry.item.id.startsWith('placeholder')}
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <span className="whitespace-normal break-words line-clamp-4">{item.text}</span>
+              <span className="whitespace-normal break-words line-clamp-4">{entry.item.text}</span>
             )}
           </motion.button>
         ))}

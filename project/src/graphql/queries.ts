@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
 
+// Sustainability Queries
 export const CREATE_SUSTAINABILITY_ACTION = gql`
   mutation CreateSustainabilityAction($input: CreateSustainabilityActionInput!) {
     createSustainabilityAction(input: $input) {
@@ -88,7 +89,6 @@ export const GET_BINGO_ITEMS = gql`
     bingoItems {
       id
       text
-      position
       category
       points
       isActive
@@ -108,11 +108,14 @@ export const GET_BINGO_GAME = gql`
         item {
           id
           text
-          position
           category
           points
           isActive
+          createdBy
+          createdAt
+          updatedAt
         }
+        position
         completedAt
       }
       bingosAchieved {
@@ -120,6 +123,19 @@ export const GET_BINGO_GAME = gql`
         pattern
         achievedAt
         pointsAwarded
+      }
+      board {
+        item {
+          id
+          text
+          category
+          points
+          isActive
+          createdBy
+          createdAt
+          updatedAt
+        }
+        position
       }
       totalPoints
       isCompleted
@@ -182,13 +198,12 @@ export const GET_BINGO_STATS = gql`
   }
 `;
 
-// Get default bingo game query
+// Get default bingo items (for easy mode or seeding)
 export const GET_DEFAULT_BINGO_GAME = gql`
   query GetDefaultBingoGame {
     easyBingoItems {
       id
       text
-      position
       category
       points
       isActive

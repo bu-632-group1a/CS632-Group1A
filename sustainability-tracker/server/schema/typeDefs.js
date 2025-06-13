@@ -182,7 +182,6 @@ export const typeDefs = gql`
   type BingoItem {
     id: ID!
     text: String!
-    position: Int!
     category: BingoCategory!
     points: Int!
     isActive: Boolean!
@@ -204,7 +203,6 @@ export const typeDefs = gql`
 
   input CreateBingoItemInput {
     text: String!
-    position: Int!
     category: BingoCategory
     points: Int
     isActive: Boolean
@@ -212,7 +210,6 @@ export const typeDefs = gql`
 
   input UpdateBingoItemInput {
     text: String
-    position: Int
     category: BingoCategory
     points: Int
     isActive: Boolean
@@ -220,9 +217,13 @@ export const typeDefs = gql`
 
   type BingoCompletedItem {
     item: BingoItem!
+    position: Int!
     completedAt: String!
   }
-
+  type BingoBoardEntry {
+    item: BingoItem!
+    position: Int!
+  }
   type BingoAchievement {
     type: BingoType!
     pattern: [Int!]!
@@ -241,6 +242,7 @@ export const typeDefs = gql`
     userId: String!
     completedItems: [BingoCompletedItem!]!
     bingosAchieved: [BingoAchievement!]!
+    board: [BingoBoardEntry!]!
     totalPoints: Int!
     isCompleted: Boolean!
     gameStartedAt: String!

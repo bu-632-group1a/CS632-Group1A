@@ -66,12 +66,19 @@ const bingoResolvers = {
           // Ensure we have bingo items before creating a game
           await bingoResolvers.Query.bingoItems();
           
-          // Create a new game for the user
+const allItems = await BingoItem.find({ isActive: true });
+const shuffled = allItems.sort(() => Math.random() - 0.5).slice(0, 16);
+const board = shuffled.map((item, idx) => ({
+  itemId: item._id,
+  position: idx,
+}));
+
           game = new BingoGame({
             userId: authUser.userId,
             completedItems: [],
             bingosAchieved: [],
             totalPoints: 0,
+            board,
           });
           await game.save();
           await game.populate('completedItems.itemId');
@@ -346,12 +353,18 @@ const bingoResolvers = {
           // Remove the item (toggle off)
           game.completedItems.splice(existingItemIndex, 1);
         } else {
-          // Add the item (toggle on)
-          game.completedItems.push({
-            itemId: bingoItem._id,
-            completedAt: new Date(),
+        // Find the position for this item on the user's board
+        const boardEntry = game.board.find(b => b.itemId.toString() === itemId);
+        if (!boardEntry) {
+          throw new GraphQLError('Item not found on user board', {
+            extensions: { code: 'BAD_USER_INPUT' },
           });
-
+        }
+        game.completedItems.push({
+          itemId: bingoItem._id,
+          position: boardEntry.position,
+          completedAt: new Date(),
+        });
           // Publish item completion event
           pubsub.publish(BINGO_EVENTS.BINGO_ITEM_COMPLETED, {
             bingoItemCompleted: {
@@ -381,7 +394,12 @@ const bingoResolvers = {
 
         // Update total points and completion status
         game.totalPoints = game.calculateTotalPoints();
-        game.isCompleted = game.completedItems.length === 16;
+        if (game.bingosAchieved.length > 0) {
+          game.isCompleted = true;
+          if (!game.gameCompletedAt) {
+            game.gameCompletedAt = new Date();
+          }
+        }
         
         if (game.isCompleted && !game.gameCompletedAt) {
           game.gameCompletedAt = new Date();
@@ -408,11 +426,9 @@ const bingoResolvers = {
     },
 
     completeEasyBingoItem: async (_, __, context) => {
-      // Require email verification for bingo game interactions
       const authUser = getVerifiedAuthUser(context);
 
       try {
-        // Find user's current game
         let game = await BingoGame.findOne({ userId: authUser.userId });
         if (!game) {
           game = new BingoGame({
@@ -420,6 +436,13 @@ const bingoResolvers = {
             completedItems: [],
             bingosAchieved: [],
             totalPoints: 0,
+          });
+        }
+
+        // Prevent further moves after win
+        if (game.isCompleted) {
+          throw new GraphQLError('Game is already completed!', {
+            extensions: { code: 'FORBIDDEN' },
           });
         }
 
@@ -441,12 +464,17 @@ const bingoResolvers = {
           });
         }
 
-        // Complete the easy item
+        const boardEntry = game.board.find(b => b.itemId.toString() === easyItem._id.toString());
+        if (!boardEntry) {
+          throw new GraphQLError('Easy item not found on user board', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
         game.completedItems.push({
           itemId: easyItem._id,
+          position: boardEntry.position,
           completedAt: new Date(),
         });
-
         // Publish item completion event
         pubsub.publish(BINGO_EVENTS.BINGO_ITEM_COMPLETED, {
           bingoItemCompleted: {
@@ -473,10 +501,16 @@ const bingoResolvers = {
           });
         }
 
-        // Update total points and completion status
+        // Update total points
         game.totalPoints = game.calculateTotalPoints();
-        game.isCompleted = game.completedItems.length === 16;
-        
+
+        // Set isCompleted if a bingo has been achieved
+        if (game.bingosAchieved.length > 0) {
+          game.isCompleted = true;
+          if (!game.gameCompletedAt) {
+            game.gameCompletedAt = new Date();
+          }
+        }        
         if (game.isCompleted && !game.gameCompletedAt) {
           game.gameCompletedAt = new Date();
         }

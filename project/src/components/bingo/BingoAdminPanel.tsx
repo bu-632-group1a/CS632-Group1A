@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, Save, X, BarChart3, Users, Trophy, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, BarChart3, Trophy, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation } from '@apollo/client';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
@@ -18,7 +18,6 @@ import {
 
 interface BingoItemForm {
   text: string;
-  position: number;
   category: string;
   points: number;
   isActive: boolean;
@@ -30,7 +29,6 @@ const BingoAdminPanel: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState<BingoItemForm>({
     text: '',
-    position: 1,
     category: 'GENERAL',
     points: 10,
     isActive: true
@@ -71,16 +69,13 @@ const BingoAdminPanel: React.FC = () => {
     }
   });
 
-  // FIX: Create a mutable copy of the array before sorting
   const bingoItems = React.useMemo(() => {
     if (!itemsData?.bingoItems) return [];
-    // Create a shallow copy to avoid mutating the Apollo cache
     return [...itemsData.bingoItems];
   }, [itemsData?.bingoItems]);
 
   const stats = statsData?.bingoStats;
   
-  // FIX: Create a mutable copy of the leaderboard array
   const leaderboard = React.useMemo(() => {
     if (!leaderboardData?.bingoLeaderboard) return [];
     return [...leaderboardData.bingoLeaderboard];
@@ -94,7 +89,6 @@ const BingoAdminPanel: React.FC = () => {
   const resetForm = () => {
     setFormData({
       text: '',
-      position: 1,
       category: 'GENERAL',
       points: 10,
       isActive: true
@@ -109,7 +103,6 @@ const BingoAdminPanel: React.FC = () => {
         variables: {
           input: {
             text: formData.text.trim(),
-            position: formData.position,
             category: formData.category,
             points: formData.points,
             isActive: formData.isActive
@@ -130,7 +123,6 @@ const BingoAdminPanel: React.FC = () => {
           id: itemId,
           input: {
             text: formData.text.trim(),
-            position: formData.position,
             category: formData.category,
             points: formData.points,
             isActive: formData.isActive
@@ -146,7 +138,6 @@ const BingoAdminPanel: React.FC = () => {
     setEditingItem(item.id);
     setFormData({
       text: item.text,
-      position: item.position,
       category: item.category,
       points: item.points,
       isActive: item.isActive
@@ -279,17 +270,6 @@ const BingoAdminPanel: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="16"
-                        value={formData.position}
-                        onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) || 1 }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                      />
-                    </div>
-                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                       <select
                         value={formData.category}
@@ -349,10 +329,7 @@ const BingoAdminPanel: React.FC = () => {
                 </div>
               ) : bingoItems.length > 0 ? (
                 <div className="space-y-3">
-                  {/* FIX: Sort the already-copied array safely */}
-                  {bingoItems
-                    .sort((a: any, b: any) => a.position - b.position)
-                    .map((item: any) => (
+                  {bingoItems.map((item: any) => (
                     <div
                       key={item.id}
                       className="bg-white border border-gray-200 rounded-lg p-4"
@@ -366,17 +343,6 @@ const BingoAdminPanel: React.FC = () => {
                                 value={formData.text}
                                 onChange={(e) => setFormData(prev => ({ ...prev, text: e.target.value }))}
                                 fullWidth
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-                              <input
-                                type="number"
-                                min="1"
-                                max="16"
-                                value={formData.position}
-                                onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) || 1 }))}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2"
                               />
                             </div>
                             <div>
@@ -434,7 +400,6 @@ const BingoAdminPanel: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <span className="text-sm font-medium text-gray-500">#{item.position}</span>
                               <Badge 
                                 variant={getCategoryColor(item.category) as any}
                                 size="sm"
@@ -563,7 +528,6 @@ const BingoAdminPanel: React.FC = () => {
               ) : leaderboard.length > 0 ? (
                 <div className="space-y-3">
                   {leaderboard.map((entry: any, index: number) => {
-                    // FIXED: Get display name from multiple sources with proper fallback
                     const displayName = entry.user?.fullName || 
                                       entry.fullName || 
                                       (entry.user?.firstName && entry.user?.lastName ? 

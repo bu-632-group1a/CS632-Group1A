@@ -173,7 +173,6 @@ export const CREATE_BINGO_ITEM = gql`
     createBingoItem(input: $input) {
       id
       text
-      position
       category
       points
       isActive
@@ -189,7 +188,6 @@ export const UPDATE_BINGO_ITEM = gql`
     updateBingoItem(id: $id, input: $input) {
       id
       text
-      position
       category
       points
       isActive
@@ -209,7 +207,6 @@ export const TOGGLE_BINGO_ITEM = gql`
         item {
           id
           text
-          position
           category
           points
           isActive
@@ -241,7 +238,6 @@ export const RESET_BINGO_GAME = gql`
         item {
           id
           text
-          position
           category
           points
           isActive

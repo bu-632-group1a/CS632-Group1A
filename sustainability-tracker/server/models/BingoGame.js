@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import BingoItem from './BingoItem.js';
 
 const bingoGameSchema = new mongoose.Schema(
   {
@@ -52,6 +53,17 @@ const bingoGameSchema = new mongoose.Schema(
     gameCompletedAt: {
       type: Date,
     },
+    board: [{
+      itemId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'BingoItem',
+        required: true,
+      },
+      position: {
+        type: Number, // 0-15
+        required: true,
+      }
+    }],
   },
   {
     timestamps: true,

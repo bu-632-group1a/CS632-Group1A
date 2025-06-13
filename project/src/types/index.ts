@@ -66,7 +66,6 @@ export interface LeaderboardEntry {
 export interface BingoItemGraphQL {
   id: string;
   text: string;
-  position: number;
   category: string;
   points: number;
   isActive: boolean;
@@ -75,8 +74,14 @@ export interface BingoItemGraphQL {
   updatedAt: string;
 }
 
+export interface BingoBoardEntry {
+  item: BingoItemGraphQL;
+  position: number;
+}
+
 export interface BingoCompletedItem {
   item: BingoItemGraphQL;
+  position: number;
   completedAt: string;
 }
 
@@ -92,6 +97,7 @@ export interface BingoGame {
   userId: string;
   completedItems: BingoCompletedItem[];
   bingosAchieved: BingoAchievement[];
+  board: BingoBoardEntry[];
   totalPoints: number;
   isCompleted: boolean;
   gameStartedAt: string;
