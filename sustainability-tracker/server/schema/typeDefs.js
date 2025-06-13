@@ -221,8 +221,8 @@ export const typeDefs = gql`
     completedAt: String!
   }
   type BingoBoardEntry {
-    item: BingoItem!
-    position: Int!
+    item: BingoItem
+    position: Int
   }
   type BingoAchievement {
     type: BingoType!
