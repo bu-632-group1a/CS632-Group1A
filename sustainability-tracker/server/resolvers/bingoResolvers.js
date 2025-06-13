@@ -1,3 +1,4 @@
+console.log('bingoResolvers.js is loaded');
 import { GraphQLError } from 'graphql';
 import { pubsub } from '../index.js';
 import BingoItem from '../models/BingoItem.js';
@@ -28,7 +29,7 @@ const EASY_COMPLETION_KEYWORDS = [
   'efficient'
 ];
 
-const bingoResolvers = {
+export const bingoResolvers = {
   Query: {
     bingoItems: async () => {
       try {
@@ -93,6 +94,7 @@ const bingoResolvers = {
             return rest;
           });
         }
+        console.log('game.board before return:', game.board);
 
         return game;
       } catch (error) {
@@ -683,25 +685,11 @@ const bingoResolvers = {
 
 BingoBoardEntry: {
   item: async (parent) => {
-    console.log('BingoBoardEntry.item parent:', parent);
-    let id = parent.itemId || parent.item;
-    if (!id) return null;
-    // Convert to ObjectId if necessary
-    if (typeof id === 'string') {
-      try {
-        id = new mongoose.Types.ObjectId(id);
-      } catch (e) {
-        return null;
-      }
-    }
-    const item = await BingoItem.findById(id);
-    if (!item) {
-      // Try raw MongoDB as a last resort
-      const raw = await BingoItem.collection.findOne({ _id: id });
-      console.log('Raw MongoDB lookup:', raw);
-      return null;
-    }
-    return item;
+    // Log for debugging
+    console.log('BingoBoardEntry.item resolver called:', parent);
+    if (!parent.itemId) return null;
+    // Ensure itemId is a string or ObjectId
+    return await BingoItem.findById(parent.itemId);
   },
   position: (parent) => parent.position,
 },

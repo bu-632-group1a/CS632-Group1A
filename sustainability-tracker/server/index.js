@@ -18,6 +18,10 @@ import { verifyAccessToken } from './utils/auth.js';
 import BingoItem from './models/BingoItem.js';
 import { getProjectManagementSustainabilityBingoItems } from './utils/defaultBingoItems.js';
 
+console.log('typeDefs loaded:', typeof typeDefs);
+console.log('bingoResolvers loaded:', typeof bingoResolvers);
+console.log('bingoResolvers keys:', Object.keys(bingoResolvers));
+
 dotenv.config();
 
 // Create PubSub instance for subscriptions
@@ -45,6 +49,7 @@ const mergedResolvers = {
   BingoGame: bingoResolvers.BingoGame,
   BingoCompletedItem: bingoResolvers.BingoCompletedItem,
   BingoAchievement: bingoResolvers.BingoAchievement,
+  BingoBoardEntry: bingoResolvers.BingoBoardEntry,
 };
 
 async function startServer() {
