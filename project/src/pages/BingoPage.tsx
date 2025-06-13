@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Award, Settings, Home, RefreshCw, ChevronDown, Gamepad2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
+import { REFRESH_ALL_BOARDS } from '../graphql/mutations';
 import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import BingoCard from '../components/bingo/BingoCard';
@@ -43,6 +44,8 @@ const BingoPage: React.FC = () => {
       console.error('Error resetting bingo game:', error);
     }
   });
+
+  const [refreshAllBoards, { loading: refreshingBoards }] = useMutation(REFRESH_ALL_BOARDS);
 
   const user = userData?.me;
   const isAdmin = user?.role === 'ADMIN';
@@ -85,6 +88,19 @@ const BingoPage: React.FC = () => {
     setShowGameSelector(false);
     // In a real implementation, this would trigger a refetch with the new game type
     console.log('Switching to game type:', gameType);
+  };
+
+  // Admin handler to refresh all boards
+  const handleRefreshAllBoards = async () => {
+    if (window.confirm('Refresh all user boards? This will reset everyone\'s bingo board to match the current items.')) {
+      try {
+        await refreshAllBoards();
+        alert('All boards refreshed!');
+        refetchGame();
+      } catch (error) {
+        alert('Failed to refresh boards: ' + (error as Error).message);
+      }
+    }
   };
 
   if (!isAuthenticated) {
@@ -147,13 +163,25 @@ const BingoPage: React.FC = () => {
 
       <div className="flex flex-row flex-wrap items-center gap-2 justify-start w-full mt-4">
         {isAdmin && (
-          <Button
-            variant={showAdminPanel ? "primary" : "outline"}
-            onClick={() => setShowAdminPanel(!showAdminPanel)}
-            icon={<Settings size={20} />}
-          >
-            {showAdminPanel ? 'Hide Admin' : 'Admin Panel'}
-          </Button>
+          <>
+            <Button
+              variant={showAdminPanel ? "primary" : "outline"}
+              onClick={() => setShowAdminPanel(!showAdminPanel)}
+              icon={<Settings size={20} />}
+            >
+              {showAdminPanel ? 'Hide Admin' : 'Admin Panel'}
+            </Button>
+            {/* Add refresh all boards button for admins */}
+            <Button
+              variant="outline"
+              onClick={handleRefreshAllBoards}
+              isLoading={refreshingBoards}
+              icon={<RefreshCw size={20} />}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Refresh All Boards
+            </Button>
+          </>
         )}
         <Button
           variant="outline"
