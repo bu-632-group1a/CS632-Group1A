@@ -331,6 +331,7 @@ export const typeDefs = gql`
     completeEasyBingoItem: EasyBingoCompletionResult!
     resetBingoGame: BingoGame!
     refreshBingoItems: [BingoItem!]!
+    refreshAllBoards: Int!
   }
 
   type Subscription {

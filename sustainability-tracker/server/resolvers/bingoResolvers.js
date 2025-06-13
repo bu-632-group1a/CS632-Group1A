@@ -602,6 +602,52 @@ const board = shuffled.map((item, idx) => ({
         });
       }
     },
+
+    refreshAllBoards: async (_, __, context) => {
+      // Only allow admins to refresh all boards
+      const authUser = getUnverifiedAuthUser(context);
+      if (authUser.role !== 'ADMIN') {
+        throw new GraphQLError('Not authorized to refresh all boards', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      try {
+        const allItems = await BingoItem.find({ isActive: true });
+        const users = await User.find({});
+        const updatedGames = [];
+
+        for (const user of users) {
+          // Shuffle and select 16 items for the board
+          const shuffled = allItems.sort(() => Math.random() - 0.5).slice(0, 16);
+          const board = shuffled.map((item, idx) => ({
+            itemId: item._id,
+            position: idx,
+          }));
+
+          let game = await BingoGame.findOne({ userId: user._id });
+          if (!game) {
+            game = new BingoGame({
+              userId: user._id,
+              completedItems: [],
+              bingosAchieved: [],
+              totalPoints: 0,
+              board,
+            });
+          } else {
+            game.board = board;
+          }
+          await game.save();
+          updatedGames.push(game);
+        }
+
+        return updatedGames.length;
+      } catch (error) {
+        throw new GraphQLError(`Failed to refresh all boards: ${error.message}`, {
+          extensions: { code: 'DATABASE_ERROR' },
+        });
+      }
+    },
   },
 
   Subscription: {
@@ -628,15 +674,19 @@ const board = shuffled.map((item, idx) => ({
     bingosAchieved: (parent) => parent.bingosAchieved || [],
   },
 
-  BingoBoardEntry: {
-    // 1. Add a resolver for the item field to fetch the full BingoItem
-    item: async (parent) => {
-      // parent.itemId may be an ObjectId or string
-      return await BingoItem.findById(parent.itemId);
-    },
-    position: (parent) => parent.position,
+BingoBoardEntry: {
+  item: async (parent) => {
+    const item = await BingoItem.findById(parent.itemId);
+    if (!item) {
+      throw new GraphQLError(
+        `BingoBoardEntry.item not found for itemId: ${parent.itemId}`,
+        { extensions: { code: 'NOT_FOUND' } }
+      );
+    }
+    return item;
   },
-
+  position: (parent) => parent.position,
+},
   BingoCompletedItem: {
     item: (parent) => parent.itemId,
     position: (parent) => parent.position,
