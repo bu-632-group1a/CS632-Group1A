@@ -397,6 +397,10 @@ const BingoPage: React.FC = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {process.env.NODE_ENV === 'development' && (
+        <div>isAdmin: {String(isAdmin)}</div>
+      )}
     </motion.div>
   );
 };
