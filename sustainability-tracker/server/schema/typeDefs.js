@@ -222,7 +222,7 @@ export const typeDefs = gql`
   }
   type BingoBoardEntry {
     item: BingoItem
-    position: Int
+    position: Int!
   }
   type BingoAchievement {
     type: BingoType!
