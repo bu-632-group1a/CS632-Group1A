@@ -167,6 +167,12 @@ export const LOGOUT = gql`
   }
 `;
 
+export const REFRESH_ALL_BOARDS = gql`
+  mutation RefreshAllBoards {
+    refreshAllBoards
+  }
+`;
+
 // Bingo Mutations
 export const CREATE_BINGO_ITEM = gql`
   mutation CreateBingoItem($input: CreateBingoItemInput!) {
