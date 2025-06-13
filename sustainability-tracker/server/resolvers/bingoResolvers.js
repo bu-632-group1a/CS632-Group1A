@@ -674,10 +674,21 @@ const bingoResolvers = {
 
 BingoBoardEntry: {
   item: async (parent) => {
-    const item = await BingoItem.findById(parent.itemId);
+    // Add logging to debug
+    console.log('BingoBoardEntry parent:', parent);
+
+    // Try both itemId and item for robustness
+    const id = parent.itemId || parent.item;
+    if (!id) {
+      throw new GraphQLError(
+        `BingoBoardEntry.item: No itemId or item found in board entry: ${JSON.stringify(parent)}`,
+        { extensions: { code: 'NOT_FOUND' } }
+      );
+    }
+    const item = await BingoItem.findById(id);
     if (!item) {
       throw new GraphQLError(
-        `BingoBoardEntry.item not found for itemId: ${parent.itemId}`,
+        `BingoBoardEntry.item not found for itemId: ${id}`,
         { extensions: { code: 'NOT_FOUND' } }
       );
     }
