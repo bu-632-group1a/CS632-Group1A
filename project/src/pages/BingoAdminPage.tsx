@@ -1,13 +1,29 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Home, Shield, AlertCircle } from 'lucide-react';
+import { Settings, Home, Shield, AlertCircle, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import BingoAdminPanel from '../components/bingo/BingoAdminPanel';
 import { useAuth } from '../context/AuthContext';
+import { useMutation } from '@apollo/client';
+import { REFRESH_ALL_BOARDS } from '../graphql/mutations';
 
 const BingoAdminPage: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
+
+  // Add mutation for refreshing all boards
+  const [refreshAllBoards, { loading: refreshingBoards }] = useMutation(REFRESH_ALL_BOARDS);
+
+  const handleRefreshAllBoards = async () => {
+    if (window.confirm('Refresh all user boards? This will reset everyone\'s bingo board to match the current items.')) {
+      try {
+        await refreshAllBoards();
+        alert('All boards refreshed!');
+      } catch (error) {
+        alert('Failed to refresh boards: ' + (error as Error).message);
+      }
+    }
+  };
 
   // Check if user is authenticated and is admin
   if (!isAuthenticated) {
@@ -71,6 +87,15 @@ const BingoAdminPage: React.FC = () => {
             Admin: {user?.fullName}
           </span>
         </div>
+        <Button
+          variant="outline"
+          onClick={handleRefreshAllBoards}
+          isLoading={refreshingBoards}
+          icon={<RefreshCw size={20} />}
+          className="text-gray-600 hover:text-gray-900"
+        >
+          Refresh All Boards
+        </Button>
         <Link to="/bingo">
           <Button
             variant="outline"
